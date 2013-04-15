@@ -35,4 +35,4 @@ implemented.
 [proj4]: http://trac.osgeo.org/proj/
 [proj4js]: http://trac.osgeo.org/proj4js/
 [spatialreference.org]: http://spatialreference.org/
-[demo]: http://rjw57.github.com/proj4webgl/
+[demo]: http://rjw57.github.io/proj4webgl/
