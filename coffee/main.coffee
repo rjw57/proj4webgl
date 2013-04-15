@@ -45,6 +45,7 @@ define [
         @downLocation = null
 
         _on elem, 'mousedown', (ev) =>
+          return if ev.button != 0 or @isDragging
           @isDragging = true
           @downLocation = { x: ev.clientX, y: ev.clientY }
           @emit 'dragstart', target: elem, controller: this

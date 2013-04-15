@@ -49,6 +49,9 @@
         this.mouseUpListener = null;
         this.downLocation = null;
         _on(elem, 'mousedown', function(ev) {
+          if (ev.button !== 0 || _this.isDragging) {
+            return;
+          }
           _this.isDragging = true;
           _this.downLocation = {
             x: ev.clientX,
