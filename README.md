@@ -37,9 +37,11 @@ own experimentation. At a high level:
 As an experimental project, only a very small number of projections have been
 implemented.
 
+* ``aea`` (to lat/lng only, buggy)
 * ``cea`` (to lat/lng only)
 * ``eqc`` (to lat/lng only)
 * ``laea`` (to lat/lng only)
+* ``lcc`` (to lat/lng only)
 * ``merc`` (to lat/lng only)
 * ``stere`` (to lat/lng only)
 * ``tmerc`` (to lat/lng only)
