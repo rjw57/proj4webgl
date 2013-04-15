@@ -66,26 +66,36 @@ define [
     dragging.on 'dragmove', (ev) ->
       mv.setCenter x: oldCenter.x + ev.deltaX * mv.scale, y: oldCenter.y - ev.deltaY * mv.scale
 
-    _on mapCanvas, 'mousewheel', (ev) ->
+    scaleAround = (ev, scale) ->
       # where is the event in the element
       elemBox = domGeom.position ev.target, false
-      canvasX = ev.clientX - elemBox.x
-      canvasY = ev.clientY - elemBox.y
+      x = ev.clientX - elemBox.x
+      y = ev.clientY - elemBox.y
 
       # and in projection co-ordinates
-      zoomCenter = mv.elementToProjection x: canvasX, y: canvasY
+      zoomCenter = mv.elementToProjection x: x, y: y
 
-      if ev.wheelDelta < 0
-        mv.setScale mv.scale * 1.1
-      else if ev.wheelDelta > 0
-        mv.setScale mv.scale / 1.1
+      mv.setScale scale
 
       # now where is the zoom center?
-      newZoomCenter = mv.elementToProjection x: canvasX, y: canvasY
+      newZoomCenter = mv.elementToProjection x: x, y: y
 
       # translate the map to move the zoom centre back where it was
       mv.setCenter x: mv.center.x + newZoomCenter.x - zoomCenter.x, y: mv.center.y + newZoomCenter.y - zoomCenter.y
 
+    _on mapCanvas, 'mousewheel', (ev) ->
+      if ev.wheelDelta < 0
+        scaleAround ev, mv.scale * 1.1
+      else if ev.wheelDelta > 0
+        scaleAround ev, mv.scale / 1.1
+      ev.preventDefault()
+
+    # for firefox
+    _on mapCanvas, 'wheel', (ev) ->
+      if ev.deltaY < 0
+        scaleAround ev, mv.scale * 1.1
+      else if ev.deltaY > 0
+        scaleAround ev, mv.scale / 1.1
       ev.preventDefault()
 
 # vim:sw=2:sts=2:et

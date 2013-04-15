@@ -3,7 +3,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', './script/mapviewer.js', './script/proj4js-combined.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, MapViewer) {
-    var Dragging, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged;
+    var Dragging, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc\
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137\
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
@@ -97,28 +97,39 @@
         y: oldCenter.y - ev.deltaY * mv.scale
       });
     });
-    return _on(mapCanvas, 'mousewheel', function(ev) {
-      var canvasX, canvasY, elemBox, newZoomCenter, zoomCenter;
+    scaleAround = function(ev, scale) {
+      var elemBox, newZoomCenter, x, y, zoomCenter;
       elemBox = domGeom.position(ev.target, false);
-      canvasX = ev.clientX - elemBox.x;
-      canvasY = ev.clientY - elemBox.y;
+      x = ev.clientX - elemBox.x;
+      y = ev.clientY - elemBox.y;
       zoomCenter = mv.elementToProjection({
-        x: canvasX,
-        y: canvasY
+        x: x,
+        y: y
       });
-      if (ev.wheelDelta < 0) {
-        mv.setScale(mv.scale * 1.1);
-      } else if (ev.wheelDelta > 0) {
-        mv.setScale(mv.scale / 1.1);
-      }
+      mv.setScale(scale);
       newZoomCenter = mv.elementToProjection({
-        x: canvasX,
-        y: canvasY
+        x: x,
+        y: y
       });
-      mv.setCenter({
+      return mv.setCenter({
         x: mv.center.x + newZoomCenter.x - zoomCenter.x,
         y: mv.center.y + newZoomCenter.y - zoomCenter.y
       });
+    };
+    _on(mapCanvas, 'mousewheel', function(ev) {
+      if (ev.wheelDelta < 0) {
+        scaleAround(ev, mv.scale * 1.1);
+      } else if (ev.wheelDelta > 0) {
+        scaleAround(ev, mv.scale / 1.1);
+      }
+      return ev.preventDefault();
+    });
+    return _on(mapCanvas, 'wheel', function(ev) {
+      if (ev.deltaY < 0) {
+        scaleAround(ev, mv.scale * 1.1);
+      } else if (ev.deltaY > 0) {
+        scaleAround(ev, mv.scale / 1.1);
+      }
       return ev.preventDefault();
     });
   });
