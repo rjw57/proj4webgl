@@ -1,7 +1,7 @@
 # AMD definition for main
 define [
     'dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry',
-    './mapviewer',
+    './script/mapviewer.js',
     './script/proj4js-combined.js',
     'dojo/domReady',
   ], (dom, _on, Evented, domGeom, MapViewer) ->
@@ -23,7 +23,7 @@ define [
       mapCanvas.height = mapCanvas.clientHeight
       mv.scheduleRedraw()
 
-    mv = new MapViewer mapCanvas, '../world.jpg'
+    mv = new MapViewer mapCanvas, 'world.jpg'
 
     projSelectChanged = (elem) ->
       opt = elem.options[elem.selectedIndex]

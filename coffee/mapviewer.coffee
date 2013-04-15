@@ -1,4 +1,4 @@
-define ['./proj4gl', 'dojo/on', './script/webgl-utils.js'], (Proj4Gl, _on) ->
+define ['./script/proj4gl.js', 'dojo/on', './script/webgl-utils.js'], (Proj4Gl, _on) ->
   createAndCompileShader = (gl, type, source) ->
     shader = gl.createShader type
     gl.shaderSource shader, source

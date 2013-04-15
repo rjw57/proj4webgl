@@ -1,7 +1,7 @@
 (function() {
   var Proj4GlModule;
 
-  define(['./proj4gl-shaders'], function(shaders) {
+  define(['./script/proj4gl-shaders.js'], function(shaders) {
     return new Proj4GlModule(shaders);
   });
 

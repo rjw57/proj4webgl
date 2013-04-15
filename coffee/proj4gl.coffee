@@ -1,4 +1,4 @@
-define ['./proj4gl-shaders'], (shaders) -> new Proj4GlModule shaders
+define ['./script/proj4gl-shaders.js'], (shaders) -> new Proj4GlModule shaders
 
 class Proj4GlModule
   constructor: (@_shaders) ->

@@ -1,6 +1,6 @@
 (function() {
 
-  define(['./proj4gl', 'dojo/on', './script/webgl-utils.js'], function(Proj4Gl, _on) {
+  define(['./script/proj4gl.js', 'dojo/on', './script/webgl-utils.js'], function(Proj4Gl, _on) {
     var MapViewer, createAndCompileShader;
     createAndCompileShader = function(gl, type, source) {
       var shader;
