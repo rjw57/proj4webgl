@@ -19,6 +19,10 @@ float adjust_lon(float x)
     return x;
 }
 
+float adjust_lat(float x) {
+    x = (abs(x) < HALF_PI) ? x: (x - (sign(x)*PI) );
+    return x;
+}
 
 // Function to compute the latitude angle, phi2, for the inverse of the
 //   Lambert Conformal Conic and Polar Stereographic projections.
