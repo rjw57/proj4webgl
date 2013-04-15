@@ -44,7 +44,7 @@
         this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 3]), this.gl.STATIC_DRAW);
         this.indexBuffer.numItems = 4;
         this.setProjection(this.proj);
-        this.setScaleAndCenter(6e7 / this.gl.drawingBufferWidth, {
+        this.setScaleAndCenter(4e7 / this.element.clientWidth, {
           x: 0,
           y: 0
         });

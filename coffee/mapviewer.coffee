@@ -55,7 +55,7 @@ define ['./script/proj4gl.js', 'dojo/on', './script/webgl-utils.js'], (Proj4Gl, 
       @indexBuffer.numItems = 4 # vertices
 
       @setProjection @proj
-      @setScaleAndCenter 6e7 / @gl.drawingBufferWidth, { x: 0, y: 0 }
+      @setScaleAndCenter 4e7 / @element.clientWidth, { x: 0, y: 0 }
 
     scheduleRedraw: () ->
       return if @redrawScheduled
