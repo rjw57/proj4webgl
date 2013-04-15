@@ -1,0 +1,28 @@
+body, html {
+  font-family: sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+#note {
+  font-size: 12px;
+  position: absolute;
+  padding: 5px 15px;
+  width: 25em;
+  right: 10px;
+  top: 10px;
+  background-color: rgba(0,0,0,0.75);
+  color: #eee;
+  border-radius: 5px;
+}
+
+#note a {
+  color: #bbb;
+  text-decoration: underline;
+}
+
+/* vim:sw=2:sts=2:et
+ */

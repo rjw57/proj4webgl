@@ -1,21 +1,31 @@
 !!! 5
 %html
   %head
+    %title PRoj4WebGL - an experiment in accelerated geographic projection
     :javascript
       var dojoConfig = { async: true, };
     %script{ :src => '//ajax.googleapis.com/ajax/libs/dojo/1.8.3/dojo/dojo.js' }
     :javascript
       require(['./script/main.js']);
+    %link{ :rel => 'stylesheet', :href => 'style.css' }
   %body
-    %center
+    %label{ :for => 'projection' }
+    %select#projection
+      %option{ :value => 'SR-ORG:6864', :selected => 1 } Spherical Mercator
+      %option{ :value => 'EPSG:27700' } British National Grid
+      %option{ :value => 'EPSG:2163' } US National Atlas Equal Area
+      %option{ :value => 'EPSG:3411' } NSIDC Sea Ice Polar Stereographic North
+      %option{ :value => 'EPSG:3412' } NSIDC Sea Ice Polar Stereographic South
+    %button#zoomIn +
+    %button#zoomOut -
+    %canvas#mapCanvas{ :style => 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1000;' }
+    %div#note
       %p
-        %label{ :for => 'projection' }
-        %select#projection
-          %option{ :value => 'SR-ORG:6864', :selected => 1 } Spherical Mercator
-          %option{ :value => 'EPSG:27700' } British National Grid
-          %option{ :value => 'EPSG:2163' } US National Atlas Equal Area
-          %option{ :value => 'EPSG:3411' } NSIDC Sea Ice Polar Stereographic North
-          %option{ :value => 'EPSG:3412' } NSIDC Sea Ice Polar Stereographic South
-        %button#zoomIn +
-        %button#zoomOut -
-      %canvas#mapCanvas{ :style => 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1000;' }
+        Please wait for imagery to load.  Drag map to move, use the mouse wheel
+        or +/- buttons to zoom in/out. Choose the projection from the drop-down
+        menu. Imagery from
+        %a{ :href => 'http://visibleearth.nasa.gov/view.php?id=74218' } NASA Visible Earth.
+      %p
+        %a{ :href => 'world.jpg' } The source image
+        is a WGS84 'equirectangular' projection. Re-projection is being
+        performed on the fly by a WebGL shader.
