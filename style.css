@@ -7,6 +7,13 @@ body, html {
   user-select: none;
 }
 
+#mapCanvas {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  z-index: -1000;
+}
+
 #note {
   font-size: 12px;
   position: absolute;
