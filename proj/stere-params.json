@@ -1,0 +1,4 @@
+{
+    "int": ["sphere", "mode"],
+    "float": ["a", "akm1", "e", "phi0", "sinph0", "cosph0", "x0", "y0", "long0", "cosX1", "sinX1"]
+}
