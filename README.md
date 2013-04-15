@@ -12,6 +12,16 @@ Like Proj4js it supports automatically fetching projection information from
 
 See [this project's GitHub pages site][demo] for a demo.
 
+## Compilation
+
+This project requires [Python] 3, [HAML] and [CoffeeScript] to be installed on
+your computer to re-generate the JavaScript and resource files. A Makefile is
+provided.
+
+Note that the ``jsresource.py`` script is the reason for the Python dependency.
+It is a simple script to wrap the GLSL source files up into a single JSON file
+for use by JavaScript.
+
 ## Documentation
 
 For the moment, the Proj4WebGL API is in flux since it is a playground for my
@@ -36,3 +46,6 @@ implemented.
 [proj4js]: http://trac.osgeo.org/proj4js/
 [spatialreference.org]: http://spatialreference.org/
 [demo]: http://rjw57.github.io/proj4webgl/
+[python]: http://python.org/
+[haml]: http://haml.info/
+[coffeescript]: http://coffeescript.org/
