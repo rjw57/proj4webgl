@@ -3,7 +3,7 @@ define [
     'dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry',
     './script/mapviewer.js', './script/rasterlayer.js',
     './script/vectorlayer.js',
-    './script/proj4js-combined.js',
+    './script/proj4js-compressed.js',
     'dojo/domReady',
   ], (dom, _on, Evented, domGeom, MapViewer, RasterLayer, VectorLayer) ->
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc

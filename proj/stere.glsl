@@ -1,11 +1,9 @@
-// constants
-#define  TOL	1.e-8
-#define  NITER	8
-#define  CONV	1.e-10
-#define  S_POLE	0
-#define  N_POLE	1
-#define  OBLIQ	2
-#define  EQUIT	3
+float ssfn_(float phit, float sinphi, float eccen)
+{
+    sinphi *= eccen;
+    return (tan(.5 * (HALF_PI + phit)) *
+	    pow((1. - sinphi) / (1. + sinphi), .5 * eccen));
+}
 
 // Stereographic forward equations--mapping lat,long to x,y
 vec2 stere_forwards(vec2 p, stere_params params)
@@ -28,7 +26,7 @@ vec2 stere_forwards(vec2 p, stere_params params)
 
     if (0 != params.sphere) {
 	//trace('stere:sphere case');
-	A = 2 * params.k0 / (1.0 + params.sinlat0 * sinlat +
+	A = 2. * params.k0 / (1.0 + params.sinlat0 * sinlat +
 			     params.coslat0 * coslat * cos(dlon));
 	p.x = params.a * A * coslat * sin(dlon) + params.x0;
 	p.y =
@@ -37,7 +35,7 @@ vec2 stere_forwards(vec2 p, stere_params params)
 	    params.y0;
 	return p;
     } else {
-	X = 2.0 * atan(params.ssfn_(lat, sinlat, params.e)) - HALF_PI;
+	X = 2.0 * atan(ssfn_(lat, sinlat, params.e)) - HALF_PI;
 	cosX = cos(X);
 	sinX = sin(X);
 	if (abs(params.coslat0) <= EPSLN) {
@@ -76,112 +74,74 @@ vec2 stere_forwards(vec2 p, stere_params params)
     return p;
 }
 
-,
 // backwards, i.e. x, y -> lon, lat
-    vec2 stere_backwards(vec2 p, stere_params params)
+vec2 stere_backwards(vec2 p, stere_params params)
 {
-    float x = (p.x - params.x0) / params.a;	/* descale and de-offset */
-    float y = (p.y - params.y0) / params.a;
-    float lon, lat;
-
-    float cosphi, sinphi, tp = 0.0, phi_l = 0.0, rho, halfe = 0.0, pi2 =
-	0.0;
-    float i;
-
-    if (0 != params.sphere) {
-	float c, rh, sinc, cosc;
-
-	rh = sqrt(x * x + y * y);
-	c = 2. * atan(rh / params.akm1);
-	sinc = sin(c);
-	cosc = cos(c);
-	lon = 0.;
-	if (params.mode == EQUIT) {
-	    if (abs(rh) <= EPSLN) {
-		lat = 0.;
-	    } else {
-		lat = asin(y * sinc / rh);
-	    }
-	    if (cosc != 0. || x != 0.)
-		lon = atan(x * sinc, cosc * rh);
-	} else if (params.mode == OBLIQ) {
-	    if (abs(rh) <= EPSLN) {
-		lat = params.phi0;
-	    } else {
-		lat =
-		    asin(cosc * params.sinph0 +
-			 y * sinc * params.cosph0 / rh);
-	    }
-	    c = cosc - params.sinph0 * sin(lat);
-	    if (c != 0. || x != 0.) {
-		lon = atan(x * sinc * params.cosph0, c * rh);
-	    }
-	} else if (params.mode == N_POLE) {
-	    y = -y;
-	    if (abs(rh) <= EPSLN) {
-		lat = params.phi0;
-	    } else {
-		lat = asin(params.mode == S_POLE ? -cosc : cosc);
-	    }
-	    if ((x == 0.) && (y == 0.)) {
-		lon = 0.;
-	    } else {
-		lon = atan(x, y);
-	    }
-	} else if (params.mode == S_POLE) {
-	    if (abs(rh) <= EPSLN) {
-		lat = params.phi0;
-	    } else {
-		lat = asin(params.mode == S_POLE ? -cosc : cosc);
-	    }
-	    lon = (x == 0. && y == 0.) ? 0. : atan(x, y);
-	}
-	p.x = adjust_lon(lon + params.long0);
-	p.y = lat;
-    } else {
-	rho = sqrt(x * x + y * y);
-	if ((params.mode == OBLIQ) || (params.mode == EQUIT)) {
-	    tp = 2. * atan(rho * params.cosX1, params.akm1);
-	    cosphi = cos(tp);
-	    sinphi = sin(tp);
-	    if (rho == 0.0) {
-		phi_l = asin(cosphi * params.sinX1);
-	    } else {
-		phi_l =
-		    asin(cosphi * params.sinX1 +
-			 (y * sinphi * params.cosX1 / rho));
-	    }
-
-	    tp = tan(.5 * (HALF_PI + phi_l));
-	    x *= sinphi;
-	    y = rho * params.cosX1 * cosphi - y * params.sinX1 * sinphi;
-	    pi2 = HALF_PI;
-	    halfe = .5 * params.e;
-	} else if ((params.mode == N_POLE) || (params.mode == S_POLE)) {
-	    if (params.mode == N_POLE) {
-		y = -y;
-	    }
-	    tp = -rho / params.akm1;
-	    phi_l = HALF_PI - 2. * atan(tp);
-	    pi2 = -HALF_PI;
-	    halfe = -.5 * params.e;
-	}
-	for (int i = 0; i < NITER; i++) {
-	    phi_l = lat;
-	    sinphi = params.e * sin(phi_l);
-	    lat =
-		2. * atan(tp * pow((1. + sinphi) / (1. - sinphi), halfe)) -
-		pi2;
-	    if (abs(phi_l - lat) < CONV) {
-		if (params.mode == S_POLE)
-		    lat = -lat;
-		lon = (x == 0. && y == 0.) ? 0. : atan(x, y);
-		p.x = adjust_lon(lon + params.long0);
-		p.y = lat;
+	p.x-=params.x0;
+	p.y-=params.y0;
+	float lon, lat;
+	float rh = sqrt(p.x*p.x + p.y*p.y);
+	if (0 != params.sphere){
+		float c=2.*atan(rh/(0.5*params.a*params.k0));
+		lon=params.long0;
+		lat=params.lat0;
+		if (rh<=EPSLN){
+			p.x=lon;
+			p.y=lat;
+			return p;
+		}
+		lat=asin(cos(c)*params.sinlat0+p.y*sin(c)*params.coslat0/rh);
+		if (abs(params.coslat0)<EPSLN){
+			if (params.lat0>0.0){
+				lon=adjust_lon(params.long0+atan(p.x,-1.0*p.y));
+			} else {
+				lon=adjust_lon(params.long0+atan(p.x,p.y));
+			}
+		} else {
+			lon=adjust_lon(params.long0+atan(p.x*sin(c),rh*params.coslat0*cos(c)-p.y*params.sinlat0*sin(c)));
+		}
+		p.x=lon;
+		p.y=lat;
 		return p;
-	    }
+				
+	} else {
+		if (abs(params.coslat0)<=EPSLN){
+			if (rh<=EPSLN){
+				lat=params.lat0;
+				lon=params.long0;
+				p.x=lon;
+				p.y=lat;
+				
+				//trace(p.toString());
+				return p;
+			}
+			p.x*=params.con;
+			p.y*=params.con;
+
+			float ts = rh*params.cons/(2.0*params.a*params.k0);
+			lat=params.con*phi2z(params.e,ts);
+			lon=params.con*adjust_lon(params.con*params.long0+atan(p.x,-1.0*p.y));
+		} else {
+			float ce = 2.0*atan(rh*params.cosX0/(2.0*params.a*params.k0*params.ms1));
+			lon=params.long0;
+			float Chi;
+			if (rh<=EPSLN){
+				Chi=params.X0;
+			} else {
+				Chi=asin(cos(ce)*params.sinX0+p.y*sin(ce)*params.cosX0/rh);
+				lon=adjust_lon(params.long0+atan(p.x*sin(ce),rh*params.cosX0*cos(ce)-p.y*params.sinX0*sin(ce)));
+			}
+			lat=-1.0*phi2z(params.e,tan(0.5*(HALF_PI+Chi)));
+			
+		}
 	}
-    }
+	
+			
+	p.x=lon;
+	p.y=lat;
+		
+	//trace(p.toString());
+	return p;
 }
 
 // vim:syntax=c:sw=4:sts=4:et

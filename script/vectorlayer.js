@@ -124,6 +124,9 @@
             loc: this.gl.getUniformLocation(this.shaderProgram, 'uProjParams.' + paramDef[0]),
             type: paramDef[1]
           };
+          if (!this.shaderProgram.uniforms.projParams[paramDef[0]].loc) {
+            console.log('parameter ' + paramDec[0] + ' appears unused');
+          }
         }
         this.gl.useProgram(this.shaderProgram);
         _ref1 = this.shaderProgram.attributes;

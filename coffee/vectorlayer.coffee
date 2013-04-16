@@ -147,6 +147,8 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
           loc: @gl.getUniformLocation(@shaderProgram, 'uProjParams.' + paramDef[0])
           type: paramDef[1]
         }
+        if not @shaderProgram.uniforms.projParams[paramDef[0]].loc
+          console.log 'parameter ' + paramDec[0] + ' appears unused'
 
       # enable use of an attribute array for each of the attributes
       @gl.useProgram @shaderProgram
