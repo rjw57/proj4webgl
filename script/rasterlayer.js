@@ -118,8 +118,8 @@
       };
 
       RasterLayer.prototype.drawLayer = function() {
-        var k, v, _ref;
-        if (!this.visible || !(this.shaderProgram != null) || !this.texture.loaded) {
+        var k, v, _ref, _ref1;
+        if (!this.visible || !(this.shaderProgram != null) || !((_ref = this.texture) != null ? _ref.loaded : void 0)) {
           return;
         }
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -133,9 +133,9 @@
         this.gl.uniform2f(this.shaderProgram.uniforms.viewportSize, this.map.element.clientWidth, this.map.element.clientHeight);
         this.gl.uniform1f(this.shaderProgram.uniforms.scale, this.map.scale);
         this.gl.uniform2f(this.shaderProgram.uniforms.viewportProjectionCenter, this.map.center.x, this.map.center.y);
-        _ref = this.shaderProgram.uniforms.projParams;
-        for (k in _ref) {
-          v = _ref[k];
+        _ref1 = this.shaderProgram.uniforms.projParams;
+        for (k in _ref1) {
+          v = _ref1[k];
           if (!(this.proj[k] != null)) {
             continue;
           }

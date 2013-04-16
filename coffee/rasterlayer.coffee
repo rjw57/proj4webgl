@@ -152,7 +152,7 @@ define [
 
     # actually draw the scene
     drawLayer: () ->
-      return if not @visible or not @shaderProgram? or not @texture.loaded
+      return if not @visible or not @shaderProgram? or not @texture?.loaded
 
       # set up the vertex buffer
       @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer
