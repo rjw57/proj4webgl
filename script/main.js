@@ -96,17 +96,17 @@
       __extends(Dragging, _super);
 
       function Dragging(elem) {
-        var _this = this;
-        this.isDragging = false;
-        this.mouseMoveListener = null;
-        this.mouseUpListener = null;
-        this.downLocation = null;
+        var downLocation, isDragging,
+          _this = this;
+        isDragging = false;
+        downLocation = null;
         _on(elem, 'mousedown', function(ev) {
-          if (ev.button !== 0 || _this.isDragging) {
+          var mouseMoveListener, mouseUpListener;
+          if (ev.button !== 0 || isDragging) {
             return;
           }
-          _this.isDragging = true;
-          _this.downLocation = {
+          isDragging = true;
+          downLocation = {
             x: ev.clientX,
             y: ev.clientY
           };
@@ -114,27 +114,61 @@
             target: elem,
             controller: _this
           });
-          _this.mouseMoveListener = _on(document, 'mousemove', function(ev) {
-            if (!_this.isDragging) {
+          mouseMoveListener = _on(document, 'mousemove', function(ev) {
+            if (!isDragging) {
               return;
             }
             return _this.emit('dragmove', {
               target: elem,
               controller: _this,
-              deltaX: ev.clientX - _this.downLocation.x,
-              deltaY: ev.clientY - _this.downLocation.y
+              deltaX: ev.clientX - downLocation.x,
+              deltaY: ev.clientY - downLocation.y
             });
           });
-          return _this.mouseUpListener = _on(document, 'mouseup', function(ev) {
-            _this.isDragging = false;
-            _this.mouseMoveListener.remove();
-            _this.mouseMoveListener = null;
-            _this.mouseUpListener.remove();
-            _this.mouseUpListener = null;
+          return mouseUpListener = _on(document, 'mouseup', function(ev) {
+            isDragging = false;
+            mouseMoveListener.remove();
+            mouseMoveListener = null;
+            mouseUpListener.remove();
+            mouseUpListener = null;
             return _this.emit('dragstop', {
               target: elem,
               controller: _this
             });
+          });
+        });
+        _on(elem, 'touchstart', function(ev) {
+          if (isDragging) {
+            return;
+          }
+          isDragging = true;
+          downLocation = {
+            x: ev.changedTouches[0].clientX,
+            y: ev.changedTouches[0].clientY
+          };
+          return _this.emit('dragstart', {
+            target: elem,
+            controller: _this
+          });
+        });
+        _on(elem, 'touchmove', function(ev) {
+          if (!isDragging) {
+            return;
+          }
+          console.log(ev.changedTouches[0].clientX - downLocation.x);
+          _this.emit('dragmove', {
+            target: elem,
+            controller: _this,
+            deltaX: ev.changedTouches[0].clientX - downLocation.x,
+            deltaY: ev.changedTouches[0].clientY - downLocation.y
+          });
+          return ev.preventDefault();
+        });
+        _on(elem, 'touchend', function(ev) {
+          isDragging = false;
+          return _this.emit('dragstop', {
+            target: elem,
+            controller: _this
           });
         });
       }

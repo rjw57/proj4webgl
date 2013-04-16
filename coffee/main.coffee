@@ -92,27 +92,40 @@ define [
     # A class implementing a dragging behaviour
     class Dragging extends Evented
       constructor: (elem) ->
-        @isDragging = false
-        @mouseMoveListener = null
-        @mouseUpListener = null
-        @downLocation = null
+        isDragging = false
+        downLocation = null
 
         _on elem, 'mousedown', (ev) =>
-          return if ev.button != 0 or @isDragging
-          @isDragging = true
-          @downLocation = { x: ev.clientX, y: ev.clientY }
+          return if ev.button != 0 or isDragging
+          isDragging = true
+          downLocation = { x: ev.clientX, y: ev.clientY }
           @emit 'dragstart', target: elem, controller: this
-          @mouseMoveListener = _on document, 'mousemove', (ev) =>
-            return if not @isDragging
+          mouseMoveListener = _on document, 'mousemove', (ev) =>
+            return if not isDragging
             @emit 'dragmove', target: elem, controller: this, \
-              deltaX: ev.clientX - @downLocation.x, deltaY: ev.clientY - @downLocation.y
-          @mouseUpListener = _on document, 'mouseup', (ev) =>
-            @isDragging = false
-            @mouseMoveListener.remove()
-            @mouseMoveListener = null
-            @mouseUpListener.remove()
-            @mouseUpListener = null
+              deltaX: ev.clientX - downLocation.x, deltaY: ev.clientY - downLocation.y
+          mouseUpListener = _on document, 'mouseup', (ev) =>
+            isDragging = false
+            mouseMoveListener.remove()
+            mouseMoveListener = null
+            mouseUpListener.remove()
+            mouseUpListener = null
             @emit 'dragstop', target: elem, controller: this
+
+        _on elem, 'touchstart', (ev) =>
+          return if isDragging
+          isDragging = true
+          downLocation = { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY }
+          @emit 'dragstart', target: elem, controller: this
+        _on elem, 'touchmove', (ev) =>
+          return if not isDragging
+          @emit 'dragmove', target: elem, controller: this, \
+            deltaX: ev.changedTouches[0].clientX - downLocation.x, \
+            deltaY: ev.changedTouches[0].clientY - downLocation.y
+          ev.preventDefault()
+        _on elem, 'touchend', (ev) =>
+          isDragging = false
+          @emit 'dragstop', target: elem, controller: this
 
     oldCenter = null
     dragging = new Dragging mapCanvas
