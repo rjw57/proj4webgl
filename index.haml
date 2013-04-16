@@ -33,12 +33,16 @@
       %p
         Please wait for imagery to load.  Drag map to move, use the mouse wheel
         or +/- buttons to zoom in/out. Choose the projection from the drop-down
-        menu. Imagery from
-        %a{ :href => 'http://visibleearth.nasa.gov/view.php?id=74218' } NASA Visible Earth.
+        menu.
+        
       %p
-        %a{ :href => 'world.jpg' } The source image
-        is a WGS84 'equirectangular' projection. Re-projection is being
-        performed on the fly by a WebGL shader.
+        Imagery from
+        %a{ :href => 'http://visibleearth.nasa.gov/view.php?id=74218' } NASA Visible Earth.
+        Vector data from
+        %a{ :href => 'http://www.naturalearthdata.com/downloads/' } Natural Earth.
+        Re-projection is being performed on the fly by a WebGL shader sampling a
+        %a{ :href => 'world.jpg' } source texture
+        in a WGS84 'equirectangular' projection.
       %p
         %a{ :href => 'https://github.com/rjw57/proj4webgl' } Source code
         is available on GitHub.
