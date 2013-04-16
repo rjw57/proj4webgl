@@ -17,6 +17,38 @@ ALGORITHM REFERENCES
     U.S. Geological Survey Professional Paper 1453 , United State Government
 *******************************************************************************/
 
+// Lambert Conformal conic forward equations--mapping lat,long to x,y
+// -----------------------------------------------------------------
+vec2 lcc_forwards(vec2 p, lcc_params params)
+{
+
+    float lon = p.x;
+    float lat = p.y;
+
+    // singular cases :
+    if (abs(2. * abs(lat) - PI) <= EPSLN) {
+	lat = sign(lat) * (HALF_PI - 2. * EPSLN);
+    }
+
+    float con = abs(abs(lat) - HALF_PI);
+    float ts, rh1;
+    if (con > EPSLN) {
+	ts = tsfnz(params.e, lat, sin(lat));
+	rh1 = params.a * params.f0 * pow(ts, params.ns);
+    } else {
+	con = lat * params.ns;
+	if (con <= 0.) {
+	    // Proj4js.reportError("lcc:forward: No Projection");
+	    return vec2(0., 0.);
+	}
+	rh1 = 0.;
+    }
+    float theta = params.ns * adjust_lon(lon - params.long0);
+    p.x = params.k0 * (rh1 * sin(theta)) + params.x0;
+    p.y = params.k0 * (params.rh - rh1 * cos(theta)) + params.y0;
+
+    return p;
+}
 
 // Lambert Conformal Conic inverse equations--mapping x,y to lat/long
 // -----------------------------------------------------------------
@@ -43,7 +75,7 @@ vec2 lcc_backwards(vec2 p, lcc_params params)
 	ts = pow((rh1 / (params.a * params.f0)), con);
 	lat = phi2z(params.e, ts);
 	if (lat == -9999.)
-	    return vec2(0.,0.);
+	    return vec2(0., 0.);
     } else {
 	lat = -HALF_PI;
     }

@@ -41,7 +41,7 @@ implemented.
 * ``cea`` (to lat/lng only)
 * ``eqc`` (to/from lat/lng)
 * ``laea`` (to/from lat/lng)
-* ``lcc`` (to lat/lng only)
+* ``lcc`` (to/from lat/lng)
 * ``merc`` (to/from lat/lng)
 * ``stere`` (to lat/lng only)
 * ``tmerc`` (to/from lat/lng)
