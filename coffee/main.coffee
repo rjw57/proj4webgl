@@ -132,9 +132,9 @@ define [
 
     # for firefox
     _on mapCanvas, 'wheel', (ev) ->
-      if ev.deltaY < 0
+      if ev.deltaY > 0
         scaleAround ev, mv.scale * 1.1
-      else if ev.deltaY > 0
+      else if ev.deltaY < 0
         scaleAround ev, mv.scale / 1.1
       ev.preventDefault()
 
