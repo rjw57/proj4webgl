@@ -90,4 +90,45 @@ float qsfnz(float eccent, float sinphi)
     }
 }
 
+/* Function to compute the inverse of qsfnz
+------------------------------------------------------------*/
+float iqsfnz(float eccent, float q)
+{
+    float temp =
+	1.0 - (1.0 -
+	       eccent * eccent) / (2.0 * eccent) * log((1. -
+							eccent) / (1. +
+								   eccent));
+    if (abs(abs(q) - temp) < 1.0E-6) {
+	if (q < 0.0) {
+	    return (-1.0 * HALF_PI);
+	} else {
+	    return HALF_PI;
+	}
+    }
+    float phi = asin(0.5 * q);
+    float dphi;
+    float sin_phi;
+    float cos_phi;
+    float con;
+    for (int i = 0; i < 30; i++) {
+	sin_phi = sin(phi);
+	cos_phi = cos(phi);
+	con = eccent * sin_phi;
+	dphi =
+	    pow(1.0 - con * con,
+		2.0) / (2.0 * cos_phi) * (q / (1. - eccent * eccent) -
+					  sin_phi / (1.0 - con * con) +
+					  0.5 / eccent * log((1.0 - con) /
+							     (1.0 + con)));
+	phi += dphi;
+	if (abs(dphi) <= 1e-5) {
+	    return phi;
+	}
+    }
+
+    //alert("IQSFN-CONV:Latitude failed to converge after 30 iterations");
+    return 0.;
+}
+
 // vim:syntax=c:sw=4:sts=4:et

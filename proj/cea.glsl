@@ -63,14 +63,18 @@ vec2 cea_backwards(vec2 p, cea_params params)
 {
     p.x -= params.x0;
     p.y -= params.y0;
+    float lon, lat;
+    
+    if (0 != params.sphere){
+	lon = adjust_lon( params.long0 + (p.x / params.a) / cos(params.lat_ts) );
+        lat = asin( (p.y/params.a) * cos(params.lat_ts) );
+    } else {
+	lat=iqsfnz(params.e,2.0*p.y*params.k0/params.a);
+	lon = adjust_lon( params.long0 + p.x/(params.a*params.k0));
+    }
 
-    float lon = adjust_lon(params.long0 +
-			   (p.x / params.a) / cos(params.lat_ts));
-
-    float lat = asin((p.y / params.a) * cos(params.lat_ts));
-
-    p.x = lon;
-    p.y = lat;
+    p.x=lon;
+    p.y=lat;
     return p;
 }				//ceaInv()
 
