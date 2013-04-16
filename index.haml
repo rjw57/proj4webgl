@@ -8,6 +8,7 @@
     :javascript
       require(['./script/main.js']);
     %link{ :rel => 'stylesheet', :href => 'style.css' }
+    %link{ :rel => 'stylesheet', :href => 'gh-fork-ribbon.css' }
   %body
     %div#controls.boxed
       %p#navigation
@@ -47,3 +48,6 @@
       %p
         %a{ :href => 'https://github.com/rjw57/proj4webgl' } Source code
         is available on GitHub.
+    %div.github-fork-ribbon-wrapper.left-bottom
+      %div.github-fork-ribbon
+        %a{ :href => 'https://github.com/rjw57/proj4webgl' } Fork me on GitHub
