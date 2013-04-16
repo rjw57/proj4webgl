@@ -48,6 +48,11 @@ define [
     coastLayer.set 'lineColor', r: 0, g: 0.5, b: 1
     mv.addLayer coastLayer
 
+    graticuleLayer = new VectorLayer mv, 'ne_50m_graticules_10.json', '10 degree graticule'
+    graticuleLayer.set 'lineWidth', 1
+    graticuleLayer.set 'lineColor', r: 0, g: 0.5, b: 0
+    mv.addLayer graticuleLayer
+
     # setup layer toggles
     layerToggles = dom.byId('layerToggles')
     idx = 1

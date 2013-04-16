@@ -3,7 +3,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', 'dojo/dom-construct', 'dojo/dom-attr', './script/mapviewer.js', './script/rasterlayer.js', './script/vectorlayer.js', './script/proj4js-compressed.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, domConstruct, domAttr, MapViewer, RasterLayer, VectorLayer) {
-    var Dragging, baseLayer, boundaryLayer, coastLayer, dragging, id, idx, input, label, layer, layerToggles, li, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround, _i, _len, _ref;
+    var Dragging, baseLayer, boundaryLayer, coastLayer, dragging, graticuleLayer, id, idx, input, label, layer, layerToggles, li, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround, _i, _len, _ref;
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc\
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137\
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
@@ -40,6 +40,14 @@
       b: 1
     });
     mv.addLayer(coastLayer);
+    graticuleLayer = new VectorLayer(mv, 'ne_50m_graticules_10.json', '10 degree graticule');
+    graticuleLayer.set('lineWidth', 1);
+    graticuleLayer.set('lineColor', {
+      r: 0,
+      g: 0.5,
+      b: 0
+    });
+    mv.addLayer(graticuleLayer);
     layerToggles = dom.byId('layerToggles');
     idx = 1;
     _ref = mv.layers;
