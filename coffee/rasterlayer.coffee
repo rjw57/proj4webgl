@@ -16,7 +16,7 @@ define [
     return shader
 
   class RasterLayer extends Stateful
-    constructor: (@map, @textureUrl, @description) ->
+    constructor: (@map, @textureUrls, @description) ->
       @shaderProgram = null
       @texture = null
       @visible = true
@@ -32,11 +32,25 @@ define [
       return if not @map.gl?
       gl = @map.gl
 
+      maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+      console.log 'maximum texture size', maxTextureSize
+      textureSize = 0
+      textureUrl = null
+      for texture in @textureUrls
+        sz = texture[0]
+        url = texture[1]
+        if sz > textureSize and sz <= maxTextureSize
+          textureSize = sz
+          textureUrl = url
+
+      return if not textureUrl?
+      console.log 'using texture url', textureUrl
+
       # create and load the image texture
       @texture = gl.createTexture()
       @texture.image = new Image()
       @texture.image.onload = () => @_textureLoaded()
-      @texture.image.src = @textureUrl
+      @texture.image.src = textureUrl
       @texture.loaded = false
 
       # create the vertex and texture co-ordinate buffer for a full-screen quad

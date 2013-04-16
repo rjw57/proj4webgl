@@ -20,10 +20,10 @@
 
       __extends(RasterLayer, _super);
 
-      function RasterLayer(map, textureUrl, description) {
+      function RasterLayer(map, textureUrls, description) {
         var _this = this;
         this.map = map;
-        this.textureUrl = textureUrl;
+        this.textureUrls = textureUrls;
         this.description = description;
         this.shaderProgram = null;
         this.texture = null;
@@ -43,18 +43,36 @@
       };
 
       RasterLayer.prototype._glChanged = function() {
-        var gl,
+        var gl, maxTextureSize, sz, texture, textureSize, textureUrl, url, _i, _len, _ref,
           _this = this;
         if (!(this.map.gl != null)) {
           return;
         }
         gl = this.map.gl;
+        maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        console.log('maximum texture size', maxTextureSize);
+        textureSize = 0;
+        textureUrl = null;
+        _ref = this.textureUrls;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          texture = _ref[_i];
+          sz = texture[0];
+          url = texture[1];
+          if (sz > textureSize && sz <= maxTextureSize) {
+            textureSize = sz;
+            textureUrl = url;
+          }
+        }
+        if (!(textureUrl != null)) {
+          return;
+        }
+        console.log('using texture url', textureUrl);
         this.texture = gl.createTexture();
         this.texture.image = new Image();
         this.texture.image.onload = function() {
           return _this._textureLoaded();
         };
-        this.texture.image.src = this.textureUrl;
+        this.texture.image.src = textureUrl;
         this.texture.loaded = false;
         this.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);

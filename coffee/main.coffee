@@ -35,7 +35,12 @@ define [
 
     mv = new MapViewer mapCanvas
     
-    baseLayer = new RasterLayer mv, 'world.jpg', 'Topography and bathymetry'
+    textures = [
+      [ 4096, 'world-4k.jpg' ],
+      [ 2048, 'world-2k.jpg' ],
+      [ 1024, 'world-1k.jpg' ],
+    ]
+    baseLayer = new RasterLayer mv, textures, 'Topography and bathymetry'
     mv.addLayer baseLayer
     
     boundaryLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json', 'Boundaries'
