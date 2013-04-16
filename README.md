@@ -39,10 +39,10 @@ implemented.
 
 * ``aea`` (to lat/lng only, buggy)
 * ``cea`` (to lat/lng only)
-* ``eqc`` (to lat/lng only)
+* ``eqc`` (to/from lat/lng)
 * ``laea`` (to lat/lng only)
 * ``lcc`` (to lat/lng only)
-* ``merc`` (to lat/lng only)
+* ``merc`` (to/from lat/lng)
 * ``stere`` (to lat/lng only)
 * ``tmerc`` (to lat/lng only)
 
