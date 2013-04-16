@@ -43,7 +43,7 @@ implemented.
 * ``laea`` (to/from lat/lng)
 * ``lcc`` (to/from lat/lng)
 * ``merc`` (to/from lat/lng)
-* ``stere`` (to lat/lng only)
+* ``stere`` (to/from lat/lng)
 * ``tmerc`` (to/from lat/lng)
 
 [proj4]: http://trac.osgeo.org/proj/

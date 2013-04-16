@@ -7,8 +7,78 @@
 #define  OBLIQ	2
 #define  EQUIT	3
 
+// Stereographic forward equations--mapping lat,long to x,y
+vec2 stere_forwards(vec2 p, stere_params params)
+{
+    float lon = p.x;
+    float lat = p.y;
+    float sinlat = sin(lat);
+    float coslat = cos(lat);
+    float x, y, A, X, sinX, cosX;
+    float dlon = adjust_lon(lon - params.long0);
+
+    if (abs(abs(lon - params.long0) - PI) <= EPSLN
+	&& abs(lat + params.lat0) <= EPSLN) {
+	//case of the origine point
+	//trace('stere:params.is the origin point');
+	//p.x=NaN;
+	//p.y=NaN;
+	return vec2(0., 0.);
+    }
+
+    if (0 != params.sphere) {
+	//trace('stere:sphere case');
+	A = 2 * params.k0 / (1.0 + params.sinlat0 * sinlat +
+			     params.coslat0 * coslat * cos(dlon));
+	p.x = params.a * A * coslat * sin(dlon) + params.x0;
+	p.y =
+	    params.a * A * (params.coslat0 * sinlat -
+			    params.sinlat0 * coslat * cos(dlon)) +
+	    params.y0;
+	return p;
+    } else {
+	X = 2.0 * atan(params.ssfn_(lat, sinlat, params.e)) - HALF_PI;
+	cosX = cos(X);
+	sinX = sin(X);
+	if (abs(params.coslat0) <= EPSLN) {
+	    float ts =
+		tsfnz(params.e, lat * params.con, params.con * sinlat);
+	    float rh = 2.0 * params.a * params.k0 * ts / params.cons;
+
+	    p.x = params.x0 + rh * sin(lon - params.long0);
+	    p.y = params.y0 - params.con * rh * cos(lon - params.long0);
+	    //trace(p.toString());
+	    return p;
+	} else if (abs(params.sinlat0) < EPSLN) {
+	    //Eq
+	    //trace('stere:equateur');
+	    A = 2.0 * params.a * params.k0 / (1.0 + cosX * cos(dlon));
+	    p.y = A * sinX;
+	} else {
+	    //other case
+	    //trace('stere:normal case');
+	    A = 2.0 * params.a * params.k0 * params.ms1 / (params.cosX0 *
+							   (1.0 +
+							    params.sinX0 *
+							    sinX +
+							    params.cosX0 *
+							    cosX *
+							    cos(dlon)));
+	    p.y =
+		A * (params.cosX0 * sinX -
+		     params.sinX0 * cosX * cos(dlon)) + params.y0;
+	}
+	p.x = A * cosX * sin(dlon) + params.x0;
+
+    }
+
+    //trace(p.toString());
+    return p;
+}
+
+,
 // backwards, i.e. x, y -> lon, lat
-vec2 stere_backwards(vec2 p, stere_params params)
+    vec2 stere_backwards(vec2 p, stere_params params)
 {
     float x = (p.x - params.x0) / params.a;	/* descale and de-offset */
     float y = (p.y - params.y0) / params.a;
@@ -39,7 +109,8 @@ vec2 stere_backwards(vec2 p, stere_params params)
 		lat = params.phi0;
 	    } else {
 		lat =
-		    asin(cosc * params.sinph0 + y * sinc * params.cosph0 / rh);
+		    asin(cosc * params.sinph0 +
+			 y * sinc * params.cosph0 / rh);
 	    }
 	    c = cosc - params.sinph0 * sin(lat);
 	    if (c != 0. || x != 0.) {
