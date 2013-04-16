@@ -3,7 +3,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', './script/mapviewer.js', './script/rasterlayer.js', './script/vectorlayer.js', './script/proj4js-combined.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, MapViewer, RasterLayer, VectorLayer) {
-    var Dragging, baseLayer, coastLayer, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
+    var Dragging, baseLayer, boundaryLayer, coastLayer, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc\
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137\
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
@@ -23,7 +23,9 @@
     mv = new MapViewer(mapCanvas);
     baseLayer = new RasterLayer(mv, 'world.jpg');
     mv.addLayer(baseLayer);
-    coastLayer = new VectorLayer(mv, 'ne_110m_admin_0_boundary_lines_land.json');
+    boundaryLayer = new VectorLayer(mv, 'ne_110m_admin_0_boundary_lines_land.json');
+    mv.addLayer(boundaryLayer);
+    coastLayer = new VectorLayer(mv, 'ne_110m_coastline.json');
     mv.addLayer(coastLayer);
     projSelectChanged = function(elem) {
       var opt;

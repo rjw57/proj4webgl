@@ -29,7 +29,10 @@ define [
     baseLayer = new RasterLayer mv, 'world.jpg'
     mv.addLayer baseLayer
     
-    coastLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json'
+    boundaryLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json'
+    mv.addLayer boundaryLayer
+
+    coastLayer = new VectorLayer mv, 'ne_110m_coastline.json'
     mv.addLayer coastLayer
 
     projSelectChanged = (elem) ->
