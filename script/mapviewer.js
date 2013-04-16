@@ -8,10 +8,10 @@
 
       __extends(MapViewer, _super);
 
-      function MapViewer(element, proj) {
+      function MapViewer(element, projection) {
         var gl;
         this.element = element;
-        this.proj = proj;
+        this.projection = projection;
         this.layers = [];
         this.redrawScheduled = false;
         gl = WebGLUtils.setupWebGL(this.element);
@@ -56,9 +56,8 @@
         return this.scheduleRedraw();
       };
 
-      MapViewer.prototype._projectionSetter = function(proj) {
-        this.proj = proj;
-        this.shaderProgram = null;
+      MapViewer.prototype._projectionSetter = function(projection) {
+        this.projection = projection;
         return this.scheduleRedraw();
       };
 

@@ -25,7 +25,6 @@
         this.map = map;
         this.featuresUrl = featuresUrl;
         this.description = description;
-        this.gl = null;
         this.shaderProgram = null;
         this.featuresLoaded = false;
         this.visible = true;
@@ -36,18 +35,19 @@
         });
         this.set('lineWidth', 1);
         this.map.watch('gl', function(n, o, gl) {
-          return _this.setGl(gl);
+          return _this._glChanged();
         });
         this.map.watch('projection', function(n, o, proj) {
-          return _this.setProjection(proj);
+          return _this._projectionChanged();
         });
-        this.setGl(this.map.gl);
+        this._glChanged();
       }
 
-      VectorLayer.prototype.setGl = function(gl) {
+      VectorLayer.prototype._glChanged = function() {
         var _this = this;
-        this.gl = gl;
-        if (!(this.gl != null)) {
+        this.featuresLoaded = false;
+        this.shaderProgram = null;
+        if (!(this.map.gl != null)) {
           return;
         }
         this.featuresLoaded = false;
@@ -56,7 +56,7 @@
         }).then(function(data) {
           return _this._featuresLoaded(data);
         });
-        return this.setProjection(this.map.projection);
+        return this._projectionChanged();
       };
 
       VectorLayer.prototype._lineColorSetter = function(lineColor) {
@@ -75,7 +75,11 @@
       };
 
       VectorLayer.prototype._featuresLoaded = function(data) {
-        var coord, coords, deg2rad, feature, idx, lineCoords, lineIndices, startIndex, _i, _j, _k, _len, _len1, _ref, _ref1;
+        var coord, coords, deg2rad, feature, gl, idx, lineCoords, lineIndices, startIndex, _i, _j, _k, _len, _len1, _ref, _ref1;
+        gl = this.map.gl;
+        if (!(gl != null)) {
+          throw 'Map GL context not available when setting up features';
+        }
         lineCoords = [];
         lineIndices = [];
         if (!(data.type != null) || !(data.features != null) || data.type !== 'FeatureCollection') {
@@ -105,95 +109,98 @@
           }
         }
         console.log('max line index', lineIndices[lineIndices.length - 1]);
-        this.vertexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(lineCoords), this.gl.STATIC_DRAW);
+        this.vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineCoords), gl.STATIC_DRAW);
         this.vertexBuffer.stride = 2 * 4;
         this.vertexBuffer.positionOffset = 0 * 4;
         this.vertexBuffer.positionSize = 2;
-        this.indexBuffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(lineIndices), this.gl.STATIC_DRAW);
+        this.indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(lineIndices), gl.STATIC_DRAW);
         this.indexBuffer.numItems = lineIndices.length;
         return this.map.scheduleRedraw();
       };
 
-      VectorLayer.prototype.setProjection = function(proj) {
-        var fragmentShader, paramDef, projSource, v, vertexShader, _, _i, _len, _ref, _ref1;
-        this.proj = proj;
+      VectorLayer.prototype._projectionChanged = function() {
+        var fragmentShader, gl, paramDef, projSource, projection, vertexShader, _i, _len, _ref;
+        projection = this.map.projection;
         this.shaderProgram = null;
-        if (!(this.proj != null)) {
+        if (!(projection != null) || !(this.map.gl != null)) {
           return;
         }
-        projSource = Proj4Gl.projectionShaderSource(this.proj.projName);
-        vertexShader = createAndCompileShader(this.gl, this.gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\n\n// define the projection and projection parameters structure\n" + projSource.source + "\n\nuniform vec2 uViewportSize; // in pixels\nuniform float uScale; // the size of one pixel in projection co-ords\nuniform vec2 uViewportProjectionCenter; // the center of the viewport in projection co-ords\nuniform " + projSource.paramsStruct.name + " uProjParams;\n\nvoid main(void) {\n  vec2 lnglat = aVertexPosition;\n  vec2 xy = " + projSource.forwardsFunction + "(lnglat, uProjParams);\n\n  // convert projection to viewport space\n  vec2 screen = 2.0 * vec2(xy + uViewportProjectionCenter) / (uScale * uViewportSize);\n\n  gl_Position = vec4(screen, 0.0, 1.0);\n}");
-        fragmentShader = createAndCompileShader(this.gl, this.gl.FRAGMENT_SHADER, "precision mediump float;\n\nuniform vec3 uLineColor;\nvoid main(void) {\n  gl_FragColor = vec4(uLineColor,1);\n}");
-        this.shaderProgram = this.gl.createProgram();
-        this.gl.attachShader(this.shaderProgram, vertexShader);
-        this.gl.attachShader(this.shaderProgram, fragmentShader);
-        this.gl.linkProgram(this.shaderProgram);
-        if (!this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS)) {
+        gl = this.map.gl;
+        projSource = Proj4Gl.projectionShaderSource(projection.projName);
+        vertexShader = createAndCompileShader(gl, gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\n\n// define the projection and projection parameters structure\n" + projSource.source + "\n\nuniform vec2 uViewportSize; // in pixels\nuniform float uScale; // the size of one pixel in projection co-ords\nuniform vec2 uViewportProjectionCenter; // the center of the viewport in projection co-ords\nuniform " + projSource.paramsStruct.name + " uProjParams;\n\nvoid main(void) {\n  vec2 lnglat = aVertexPosition;\n  vec2 xy = " + projSource.forwardsFunction + "(lnglat, uProjParams);\n\n  // convert projection to viewport space\n  vec2 screen = 2.0 * vec2(xy + uViewportProjectionCenter) / (uScale * uViewportSize);\n\n  gl_Position = vec4(screen, 0.0, 1.0);\n}");
+        fragmentShader = createAndCompileShader(gl, gl.FRAGMENT_SHADER, "precision mediump float;\n\nuniform vec3 uLineColor;\nvoid main(void) {\n  gl_FragColor = vec4(uLineColor,1);\n}");
+        this.shaderProgram = gl.createProgram();
+        gl.attachShader(this.shaderProgram, vertexShader);
+        gl.attachShader(this.shaderProgram, fragmentShader);
+        gl.linkProgram(this.shaderProgram);
+        if (!gl.getProgramParameter(this.shaderProgram, gl.LINK_STATUS)) {
           throw 'Could not initialise shaders';
         }
         this.shaderProgram.attributes = {
-          vertexPosition: this.gl.getAttribLocation(this.shaderProgram, 'aVertexPosition')
+          vertexPosition: gl.getAttribLocation(this.shaderProgram, 'aVertexPosition')
         };
         this.shaderProgram.uniforms = {
-          viewportSize: this.gl.getUniformLocation(this.shaderProgram, 'uViewportSize'),
-          lineColor: this.gl.getUniformLocation(this.shaderProgram, 'uLineColor'),
-          scale: this.gl.getUniformLocation(this.shaderProgram, 'uScale'),
-          viewportProjectionCenter: this.gl.getUniformLocation(this.shaderProgram, 'uViewportProjectionCenter'),
+          viewportSize: gl.getUniformLocation(this.shaderProgram, 'uViewportSize'),
+          lineColor: gl.getUniformLocation(this.shaderProgram, 'uLineColor'),
+          scale: gl.getUniformLocation(this.shaderProgram, 'uScale'),
+          viewportProjectionCenter: gl.getUniformLocation(this.shaderProgram, 'uViewportProjectionCenter'),
           projParams: {}
         };
         _ref = projSource.paramsStruct.params;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           paramDef = _ref[_i];
           this.shaderProgram.uniforms.projParams[paramDef[0]] = {
-            loc: this.gl.getUniformLocation(this.shaderProgram, 'uProjParams.' + paramDef[0]),
+            loc: gl.getUniformLocation(this.shaderProgram, 'uProjParams.' + paramDef[0]),
             type: paramDef[1]
           };
           if (!this.shaderProgram.uniforms.projParams[paramDef[0]].loc) {
             console.log('parameter ' + paramDef[0] + ' appears unused');
           }
         }
-        this.gl.useProgram(this.shaderProgram);
-        _ref1 = this.shaderProgram.attributes;
-        for (_ in _ref1) {
-          v = _ref1[_];
-          this.gl.enableVertexAttribArray(v);
-        }
         return this.featuresLoaded = true;
       };
 
       VectorLayer.prototype.drawLayer = function() {
-        var k, v, _ref;
+        var gl, k, projection, v, _, _ref, _ref1;
         if (!this.visible || !(this.shaderProgram != null) || !this.featuresLoaded || !(this.vertexBuffer != null)) {
           return;
         }
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
-        this.gl.vertexAttribPointer(this.shaderProgram.attributes.vertexPosition, this.vertexBuffer.positionSize, this.gl.FLOAT, false, this.vertexBuffer.stride, this.vertexBuffer.positionOffset);
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-        this.gl.useProgram(this.shaderProgram);
-        this.gl.lineWidth(this.lineWidth);
-        this.gl.uniform3f(this.shaderProgram.uniforms.lineColor, this.lineColor.r, this.lineColor.g, this.lineColor.b);
-        this.gl.uniform2f(this.shaderProgram.uniforms.viewportSize, this.map.element.clientWidth, this.map.element.clientHeight);
-        this.gl.uniform1f(this.shaderProgram.uniforms.scale, this.map.scale);
-        this.gl.uniform2f(this.shaderProgram.uniforms.viewportProjectionCenter, this.map.center.x, this.map.center.y);
-        _ref = this.shaderProgram.uniforms.projParams;
-        for (k in _ref) {
-          v = _ref[k];
-          if (!(this.proj[k] != null)) {
+        gl = this.map.gl;
+        projection = this.map.projection;
+        gl.useProgram(this.shaderProgram);
+        _ref = this.shaderProgram.attributes;
+        for (_ in _ref) {
+          v = _ref[_];
+          gl.enableVertexAttribArray(v);
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        gl.vertexAttribPointer(this.shaderProgram.attributes.vertexPosition, this.vertexBuffer.positionSize, gl.FLOAT, false, this.vertexBuffer.stride, this.vertexBuffer.positionOffset);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+        gl.useProgram(this.shaderProgram);
+        gl.lineWidth(this.lineWidth);
+        gl.uniform3f(this.shaderProgram.uniforms.lineColor, this.lineColor.r, this.lineColor.g, this.lineColor.b);
+        gl.uniform2f(this.shaderProgram.uniforms.viewportSize, this.map.element.clientWidth, this.map.element.clientHeight);
+        gl.uniform1f(this.shaderProgram.uniforms.scale, this.map.scale);
+        gl.uniform2f(this.shaderProgram.uniforms.viewportProjectionCenter, this.map.center.x, this.map.center.y);
+        _ref1 = this.shaderProgram.uniforms.projParams;
+        for (k in _ref1) {
+          v = _ref1[k];
+          if (!(projection[k] != null)) {
             continue;
           }
           if (v.type === 'int') {
-            this.gl.uniform1i(v.loc, this.proj[k]);
+            gl.uniform1i(v.loc, projection[k]);
           } else if (v.type === 'float') {
-            this.gl.uniform1f(v.loc, this.proj[k]);
+            gl.uniform1f(v.loc, projection[k]);
           } else {
             console.error('unknown parameter type for ' + k.toString());
           }
         }
-        return this.gl.drawElements(this.gl.LINES, this.indexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
+        return gl.drawElements(gl.LINES, this.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
       };
 
       return VectorLayer;

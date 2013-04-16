@@ -3,7 +3,7 @@ define [
   './script/webgl-utils.js'
 ], (Proj4Gl, _on, Stateful) ->
   class MapViewer extends Stateful
-    constructor: (@element, @proj) ->
+    constructor: (@element, @projection) ->
       @layers = []
       @redrawScheduled = false
 
@@ -37,9 +37,7 @@ define [
       @center = c
       @scheduleRedraw()
 
-    _projectionSetter: (proj) ->
-      @proj = proj
-      @shaderProgram = null
+    _projectionSetter: (@projection) ->
       @scheduleRedraw()
 
     # actually draw the scene
