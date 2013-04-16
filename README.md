@@ -44,7 +44,7 @@ implemented.
 * ``lcc`` (to lat/lng only)
 * ``merc`` (to/from lat/lng)
 * ``stere`` (to lat/lng only)
-* ``tmerc`` (to lat/lng only)
+* ``tmerc`` (to/from lat/lng)
 
 [proj4]: http://trac.osgeo.org/proj/
 [proj4js]: http://trac.osgeo.org/proj4js/
