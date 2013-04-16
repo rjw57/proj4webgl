@@ -2,9 +2,10 @@
 define [
     'dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry',
     './script/mapviewer.js', './script/rasterlayer.js',
+    './script/vectorlayer.js',
     './script/proj4js-combined.js',
     'dojo/domReady',
-  ], (dom, _on, Evented, domGeom, MapViewer, RasterLayer) ->
+  ], (dom, _on, Evented, domGeom, MapViewer, RasterLayer, VectorLayer) ->
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
@@ -27,6 +28,9 @@ define [
     
     baseLayer = new RasterLayer mv, 'world.jpg'
     mv.addLayer baseLayer
+    
+    coastLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json'
+    mv.addLayer coastLayer
 
     projSelectChanged = (elem) ->
       opt = elem.options[elem.selectedIndex]

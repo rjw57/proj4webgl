@@ -22,6 +22,43 @@ ALGORITHM REFERENCES
     Printing Office, Washington D.C., 1989.
 *******************************************************************************/
 
+/* Mercator forward equations--mapping lat,long to x,y
+  --------------------------------------------------*/
+vec2 merc_forwards(vec2 p, merc_params params)
+{
+    float lon = p.x;
+    float lat = p.y;
+    // convert to radians
+    if (lat * R2D > 90.0 &&
+	lat * R2D < -90.0 && lon * R2D > 180.0 && lon * R2D < -180.0) {
+	return vec2(0., 0.);
+    }
+
+    float x, y;
+    if (abs(abs(lat) - HALF_PI) <= EPSLN) {
+	// Proj4js.reportError("merc:forward: ll2mAtPoles");
+	return vec2(0., 0.);
+    } else {
+	if (0 != params.sphere) {
+	    x = params.x0 + params.a * params.k0 * adjust_lon(lon -
+							      params.
+							      long0);
+	    y = params.y0 +
+		params.a * params.k0 * log(tan(FORTPI + 0.5 * lat));
+	} else {
+	    float sinphi = sin(lat);
+	    float ts = tsfnz(params.e, lat, sinphi);
+	    x = params.x0 + params.a * params.k0 * adjust_lon(lon -
+							      params.
+							      long0);
+	    y = params.y0 - params.a * params.k0 * log(ts);
+	}
+	p.x = x;
+	p.y = y;
+	return p;
+    }
+}
+
 /* Mercator inverse equations--mapping x,y to lat/long
 --------------------------------------------------*/
 vec2 merc_backwards(vec2 p, merc_params params)
@@ -31,14 +68,12 @@ vec2 merc_backwards(vec2 p, merc_params params)
     float lon, lat;
 
     if (0 != params.sphere) {
-	lat =
-	    HALF_PI -
-	    2.0 * atan(exp(-y / (params.a * params.k0)));
+	lat = HALF_PI - 2.0 * atan(exp(-y / (params.a * params.k0)));
     } else {
 	float ts = exp(-y / (params.a * params.k0));
 	lat = phi2z(params.e, ts);
 	if (lat == -9999.) {
-            return vec2(0.,0.);
+	    return vec2(0., 0.);
 	}
     }
     lon = adjust_lon(params.long0 + x / (params.a * params.k0));

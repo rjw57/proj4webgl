@@ -1,4 +1,4 @@
-define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
+define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (xhr, Proj4Gl) ->
   createAndCompileShader = (gl, type, source) ->
     shader = gl.createShader type
     gl.shaderSource shader, source
@@ -11,11 +11,11 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
 
     return shader
 
-  class RasterLayer
-    constructor: (@map, @textureUrl) ->
+  class VectorLayer
+    constructor: (@map, @featuresUrl) ->
       @gl = null
       @shaderProgram = null
-      @texture = null
+      @featuresLoaded = false
 
       @map.watch 'gl', (n, o, gl) => @setGl(gl)
       @map.watch 'projection', (n, o, proj) => @setProjection(proj)
@@ -24,40 +24,63 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
     setGl: (@gl) ->
       return if not @gl?
 
-      # create and load the image texture
-      @texture = @gl.createTexture()
-      @texture.image = new Image()
-      @texture.image.onload = () => @_textureLoaded()
-      @texture.image.src = @textureUrl
-      @texture.loaded = false
-
-      # create the vertex and texture co-ordinate buffer for a full-screen quad
-      # the first 3 co-ordinates are the position of vertex, the last two are the texture co-ord
-      @vertexBuffer = @gl.createBuffer()
-      @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer
-      @gl.bufferData(@gl.ARRAY_BUFFER, new Float32Array([
-        -1, -1, 0,    -0.5, -0.5,
-         1, -1, 0,     0.5, -0.5,
-         1,  1, 0,     0.5,  0.5,
-        -1,  1, 0,    -0.5,  0.5,
-      ]), @gl.STATIC_DRAW)
-
-      # record the strides, sizes and offsets of the various components for later use
-      @vertexBuffer.stride = 5 * 4
-      @vertexBuffer.textureOffset = 3 * 4
-      @vertexBuffer.textureSize = 2
-      @vertexBuffer.positionOffset = 0 * 4
-      @vertexBuffer.positionSize = 3
-
-      # an index buffer for drawing two triangles (as a fan) covering the quad
-      @indexBuffer = @gl.createBuffer()
-      @gl.bindBuffer @gl.ELEMENT_ARRAY_BUFFER, @indexBuffer
-      @gl.bufferData @gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([
-        0, 1, 2, 3
-      ]), @gl.STATIC_DRAW
-      @indexBuffer.numItems = 4 # vertices
+      # start loading features
+      @featuresLoaded = false
+      xhr(@featuresUrl, handleAs: 'json').then (data) => @_featuresLoaded(data)
 
       @setProjection @map.projection
+
+    _featuresLoaded: (data) ->
+      # the idea of this method is to convert the loaded features into a series of lines
+      # which should be drawn. lineCoords is an array of Long, Lat positions of
+      # the feature. lineIndices is a set of indices into this array with two
+      # entries for each line to be drawn
+      lineCoords = []
+      lineIndices = []
+
+      if not data.type? or not data.features? or data.type != 'FeatureCollection'
+        throw 'Loaded features were not a FeatureCollection'
+
+      for feature in data.features
+        if not feature.type? or feature.type != 'Feature'
+          console.error 'Invalid feature', feature
+          throw 'Feature is invalid'
+
+        # we only care about linestrings
+        continue if feature.geometry.type != 'LineString'
+
+        # this will be the index of the first co-ordinate we push
+        startIndex = lineCoords.length / 2
+
+        # append the co-ordinates of the line string
+        coords = feature.geometry.coordinates
+        deg2rad = (2.0 * 3.14159) / 360.0
+        for coord in coords
+          lineCoords.push coord[0] * deg2rad
+          lineCoords.push coord[1] * deg2rad
+
+        # append each line segment NB: range is exclusive of end
+        for idx in [1...coords.length]
+          lineIndices.push startIndex + idx - 1
+          lineIndices.push startIndex + idx
+
+      console.log 'max line index', lineIndices[lineIndices.length-1]
+
+      # create the vertex buffer
+      @vertexBuffer = @gl.createBuffer()
+      @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer
+      @gl.bufferData @gl.ARRAY_BUFFER, new Float32Array(lineCoords), @gl.STATIC_DRAW
+      @vertexBuffer.stride = 2 * 4
+      @vertexBuffer.positionOffset = 0 * 4
+      @vertexBuffer.positionSize = 2 # co-ords
+
+      # create the index buffer
+      @indexBuffer = @gl.createBuffer()
+      @gl.bindBuffer @gl.ELEMENT_ARRAY_BUFFER, @indexBuffer
+      @gl.bufferData @gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(lineIndices), @gl.STATIC_DRAW
+      @indexBuffer.numItems = lineIndices.length # vertices
+
+      @map.scheduleRedraw()
 
     setProjection: (proj) ->
       @proj = proj
@@ -67,43 +90,32 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
       # get the shader source for the projection
       projSource = Proj4Gl.projectionShaderSource @proj.projName
 
-      # the viewport translation is done in the vertex shader
+      # the viewport translation *and* projection is done in the vertex shader
       vertexShader = createAndCompileShader @gl, @gl.VERTEX_SHADER, """
-        attribute vec2 aTextureCoord;
-        attribute vec3 aVertexPosition;
-        varying vec2 vTextureCoord;
-
-        uniform vec2 uViewportSize; // in pixels
-        uniform float uScale; // the size of one pixel in projection co-ords
-        uniform vec2 uViewportProjectionCenter; // the center of the viewport in projection co-ords
-
-        void main(void) {
-          vec3 pos = aVertexPosition;
-          gl_Position = vec4(pos, 1.0);
-
-          // convert texture coord in range [-0.5, 0.5) to viewport pixel coord
-          vec2 pixelCoord = aTextureCoord * uViewportSize;
-
-          // convert to projection coordinates
-          vTextureCoord = pixelCoord * uScale - uViewportProjectionCenter;
-        }
-      """
-
-      fragmentShader = createAndCompileShader @gl, @gl.FRAGMENT_SHADER, """
-        precision mediump float;
+        attribute vec2 aVertexPosition;
 
         // define the projection and projection parameters structure
         #{ projSource.source }
 
-        varying vec2 vTextureCoord;
-        uniform sampler2D uSampler;
+        uniform vec2 uViewportSize; // in pixels
+        uniform float uScale; // the size of one pixel in projection co-ords
+        uniform vec2 uViewportProjectionCenter; // the center of the viewport in projection co-ords
         uniform #{ projSource.paramsStruct.name } uProjParams;
 
         void main(void) {
-          vec2 lonlat = #{ projSource.backwardsFunction }(vTextureCoord, uProjParams);
-          lonlat /= vec2(2.0 * 3.14159, 3.14159);
-          lonlat += vec2(0.5, 0.5);
-          gl_FragColor = texture2D(uSampler, lonlat);
+          vec2 lnglat = aVertexPosition;
+          vec2 xy = #{ projSource.forwardsFunction }(lnglat, uProjParams);
+
+          // convert projection to viewport space
+          vec2 screen = 2.0 * vec2(xy + uViewportProjectionCenter) / (uScale * uViewportSize);
+
+          gl_Position = vec4(screen, 0.0, 1.0);
+        }
+      """
+
+      fragmentShader = createAndCompileShader @gl, @gl.FRAGMENT_SHADER, """
+        void main(void) {
+          gl_FragColor = vec4(1,0,0,1);
         }
       """
 
@@ -119,11 +131,9 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
       # set some fields on the shader to record the location of attributes
       @shaderProgram.attributes = {
         vertexPosition: @gl.getAttribLocation(@shaderProgram, 'aVertexPosition')
-        textureCoord: @gl.getAttribLocation(@shaderProgram, 'aTextureCoord')
       }
 
       @shaderProgram.uniforms = {
-        sampler: @gl.getUniformLocation(@shaderProgram, 'uSampler')
         viewportSize: @gl.getUniformLocation(@shaderProgram, 'uViewportSize')
         scale: @gl.getUniformLocation(@shaderProgram, 'uScale')
         viewportProjectionCenter:
@@ -142,28 +152,24 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
       @gl.useProgram @shaderProgram
       @gl.enableVertexAttribArray v for _, v of @shaderProgram.attributes
 
+      # mark the features as being loaded
+      @featuresLoaded = true
+
     # actually draw the scene
     drawLayer: () ->
-      return if not @shaderProgram? or not @texture.loaded
+      return if not @shaderProgram? or not @featuresLoaded or not @vertexBuffer?
 
       # set up the vertex buffer
       @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer
       @gl.vertexAttribPointer @shaderProgram.attributes.vertexPosition,
         @vertexBuffer.positionSize, @gl.FLOAT, false,
         @vertexBuffer.stride, @vertexBuffer.positionOffset
-      @gl.vertexAttribPointer @shaderProgram.attributes.textureCoord,
-        @vertexBuffer.textureSize, @gl.FLOAT, false,
-        @vertexBuffer.stride, @vertexBuffer.textureOffset
 
       # set up the index buffer
       @gl.bindBuffer @gl.ELEMENT_ARRAY_BUFFER, @indexBuffer
 
       # set program uniform values
       @gl.useProgram @shaderProgram
-
-      @gl.activeTexture @gl.TEXTURE0
-      @gl.bindTexture @gl.TEXTURE_2D, @texture
-      @gl.uniform1i @shaderProgram.uniforms.sampler, 0 # tex unit 0
 
       @gl.uniform2f @shaderProgram.uniforms.viewportSize, @map.element.clientWidth, @map.element.clientHeight
       @gl.uniform1f @shaderProgram.uniforms.scale, @map.scale
@@ -179,23 +185,8 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
           console.error 'unknown parameter type for ' + k.toString()
 
       # draw the quad
-      @gl.drawElements @gl.TRIANGLE_FAN, @indexBuffer.numItems, @gl.UNSIGNED_SHORT, 0
+      @gl.drawElements @gl.LINES, @indexBuffer.numItems, @gl.UNSIGNED_SHORT, 0
 
-    # set up the map texture
-    _textureLoaded: () ->
-      @gl.bindTexture @gl.TEXTURE_2D, @texture
-      @gl.pixelStorei @gl.UNPACK_FLIP_Y_WEBGL, true
-      @gl.texImage2D @gl.TEXTURE_2D, 0, @gl.RGBA, @gl.RGBA, @gl.UNSIGNED_BYTE, @texture.image
-      @gl.texParameteri @gl.TEXTURE_2D, @gl.TEXTURE_MAG_FILTER, @gl.NEAREST
-      @gl.texParameteri @gl.TEXTURE_2D, @gl.TEXTURE_MIN_FILTER, @gl.NEAREST
-      # set wrap mode appropriate for latlon images
-      @gl.texParameteri @gl.TEXTURE_2D, @gl.TEXTURE_WRAP_S, @gl.REPEAT
-      @gl.texParameteri @gl.TEXTURE_2D, @gl.TEXTURE_WRAP_T, @gl.CLAMP_TO_EDGE
-      @gl.bindTexture @gl.TEXTURE_2D, null
-
-      @texture.loaded = true
-      @map.scheduleRedraw()
-
-  return RasterLayer
+  return VectorLayer
 # vim:sw=2:sts=2:et
 

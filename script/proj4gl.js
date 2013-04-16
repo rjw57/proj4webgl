@@ -38,7 +38,7 @@
       structure_source += '};\n';
       return {
         source: common_source + structure_source + shader_source,
-        forwardsFunction: 'not_implemented',
+        forwardsFunction: projName + '_forwards',
         backwardsFunction: projName + '_backwards',
         paramsStruct: {
           source: structure_source,

@@ -3,6 +3,13 @@
 #define PI          3.141592653589793
 #define TWO_PI      6.283185307179586
 #define EPSLN       1e-10
+#define FORTPI      0.78539816339744833
+#define R2D         57.29577951308232088
+#define D2R         0.01745329251994329577
+#define SEC_TO_RAD  4.84813681109535993589914102357e-6 /* SEC_TO_RAD = Pi/180/3600 */
+#define MAX_ITER    20
+#define COS_67P5    0.38268343236508977  /* cosine of 67.5 degrees */
+#define AD_C        1.0026000                /* Toms region 1 constant */
 
 // utility functions
 float asinz(float x)
@@ -46,6 +53,18 @@ float phi2z(float eccent, float ts)
     }
 
     return (-9999.);
+}
+
+// Function to compute the constant small t for use in the forward
+//   computations in the Lambert Conformal Conic and the Polar
+//   Stereographic projections.
+// -----------------------------------------------------------------
+float tsfnz(float eccent, float phi, float sinphi)
+{
+    float con = eccent * sinphi;
+    float com = .5 * eccent;
+    con = pow(((1.0 - con) / (1.0 + con)), com);
+    return (tan(.5 * (HALF_PI - phi))/con);
 }
 
 // vim:syntax=c:sw=4:sts=4:et
