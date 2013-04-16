@@ -2,7 +2,7 @@
     "int": ["sphere", "mode"],
     "float": [
 	"a", "x0", "y0", "phi0", "sinph0", "cosph0", "dd", "rq", "qp",
-        "sinb1", "cosb1", "long0"
+        "sinb1", "cosb1", "long0", "e", "xmf", "ymf"
     ],
     "float[3]": ["apa"]
 }

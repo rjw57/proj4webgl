@@ -6,10 +6,10 @@
 #define FORTPI      0.78539816339744833
 #define R2D         57.29577951308232088
 #define D2R         0.01745329251994329577
-#define SEC_TO_RAD  4.84813681109535993589914102357e-6 /* SEC_TO_RAD = Pi/180/3600 */
+#define SEC_TO_RAD  4.84813681109535993589914102357e-6	/* SEC_TO_RAD = Pi/180/3600 */
 #define MAX_ITER    20
-#define COS_67P5    0.38268343236508977  /* cosine of 67.5 degrees */
-#define AD_C        1.0026000                /* Toms region 1 constant */
+#define COS_67P5    0.38268343236508977	/* cosine of 67.5 degrees */
+#define AD_C        1.0026000	/* Toms region 1 constant */
 
 // utility functions
 float asinz(float x)
@@ -26,8 +26,9 @@ float adjust_lon(float x)
     return x;
 }
 
-float adjust_lat(float x) {
-    x = (abs(x) < HALF_PI) ? x: (x - (sign(x)*PI) );
+float adjust_lat(float x)
+{
+    x = (abs(x) < HALF_PI) ? x : (x - (sign(x) * PI));
     return x;
 }
 
@@ -45,8 +46,7 @@ float phi2z(float eccent, float ts)
 	dphi =
 	    HALF_PI -
 	    2. * atan(ts *
-		     (pow(((1.0 - con) / (1.0 + con)), eccnth))) -
-	    phi;
+		      (pow(((1.0 - con) / (1.0 + con)), eccnth))) - phi;
 	phi += dphi;
 	if (abs(dphi) <= .0000000001)
 	    return phi;
@@ -64,11 +64,30 @@ float tsfnz(float eccent, float phi, float sinphi)
     float con = eccent * sinphi;
     float com = .5 * eccent;
     con = pow(((1.0 - con) / (1.0 + con)), com);
-    return (tan(.5 * (HALF_PI - phi))/con);
+    return (tan(.5 * (HALF_PI - phi)) / con);
 }
 
-float mlfn(float e0, float e1, float e2, float e3, float phi) {
-    return(e0*phi-e1*sin(2.0*phi)+e2*sin(4.0*phi)-e3*sin(6.0*phi));
+float mlfn(float e0, float e1, float e2, float e3, float phi)
+{
+    return (e0 * phi - e1 * sin(2.0 * phi) + e2 * sin(4.0 * phi) -
+	    e3 * sin(6.0 * phi));
+}
+
+/* Function to compute constant small q which is the radius of a 
+   parallel of latitude, phi, divided by the semimajor axis. 
+------------------------------------------------------------*/
+float qsfnz(float eccent, float sinphi)
+{
+    float con;
+    if (eccent > 1.0e-7) {
+	con = eccent * sinphi;
+	return ((1.0 - eccent * eccent) * (sinphi / (1.0 - con * con) -
+					   (.5 / eccent) *
+					   log((1.0 - con) / (1.0 +
+							      con))));
+    } else {
+	return (2.0 * sinphi);
+    }
 }
 
 // vim:syntax=c:sw=4:sts=4:et

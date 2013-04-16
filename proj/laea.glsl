@@ -39,6 +39,101 @@ float authlat(float beta, float APA[3])
 	    APA[2] * sin(t + t + t));
 }
 
+/* Lambert Azimuthal Equal Area forward equations--mapping lat,long to x,y
+  -----------------------------------------------------------------------*/
+vec2 laea_forwards(vec2 p, laea_params params)
+{
+    /* Forward equations
+       ----------------- */
+    float x, y;
+    float lam = p.x;
+    float phi = p.y;
+    lam = adjust_lon(lam - params.long0);
+
+    if (0 != params.sphere) {
+	float coslam, cosphi, sinphi;
+
+	sinphi = sin(phi);
+	cosphi = cos(phi);
+	coslam = cos(lam);
+	if ((params.mode == OBLIQ) || (params.mode == EQUIT)) {
+	    y = (params.mode ==
+		 EQUIT) ? 1. + cosphi * coslam : 1. +
+		params.sinph0 * sinphi + params.cosph0 * cosphi * coslam;
+	    if (y <= EPSLN) {
+		//Proj4js.reportError("laea:fwd:y less than eps");
+		return vec2(0., 0.);
+	    }
+	    y = sqrt(2. / y);
+	    x = y * cosphi * sin(lam);
+	    y *= (params.mode ==
+		  EQUIT) ? sinphi : params.cosph0 * sinphi -
+		params.sinph0 * cosphi * coslam;
+	} else if ((params.mode == N_POLE) || (params.mode == S_POLE)) {
+	    if (params.mode == N_POLE) {
+		coslam = -coslam;
+	    }
+	    if (abs(phi + params.phi0) < EPSLN) {
+		// Proj4js.reportError("laea:fwd:phi < eps");
+		return vec2(0., 0.);
+	    }
+	    y = FORTPI - phi * .5;
+	    y = 2. * ((params.mode == S_POLE) ? cos(y) : sin(y));
+	    x = y * sin(lam);
+	    y *= coslam;
+	}
+    } else {
+	float coslam, sinlam, sinphi, q, sinb = 0.0, cosb = 0.0, b = 0.0;
+
+	coslam = cos(lam);
+	sinlam = sin(lam);
+	sinphi = sin(phi);
+	q = qsfnz(params.e, sinphi);
+	if (params.mode == OBLIQ || params.mode == EQUIT) {
+	    sinb = q / params.qp;
+	    cosb = sqrt(1. - sinb * sinb);
+	}
+	if (params.mode == OBLIQ) {
+	    b = 1. + params.sinb1 * sinb + params.cosb1 * cosb * coslam;
+	} else if (params.mode == EQUIT) {
+	    b = 1. + cosb * coslam;
+	} else if (params.mode == N_POLE) {
+	    b = HALF_PI + phi;
+	    q = params.qp - q;
+	} else if (params.mode == S_POLE) {
+	    b = phi - HALF_PI;
+	    q = params.qp + q;
+	}
+	if (abs(b) < EPSLN) {
+	    // Proj4js.reportError("laea:fwd:b < eps");
+	    return vec2(0., 0.);
+	}
+
+	if ((params.mode == OBLIQ) || (params.mode == EQUIT)) {
+	    b = sqrt(2. / b);
+	    if (params.mode == OBLIQ) {
+		y = params.ymf * b * (params.cosb1 * sinb -
+				      params.sinb1 * cosb * coslam);
+	    } else {
+		y = (b =
+		     sqrt(2. / (1. + cosb * coslam))) * sinb * params.ymf;
+	    }
+	    x = params.xmf * b * cosb * sinlam;
+	} else if ((params.mode == N_POLE) || (params.mode == S_POLE)) {
+	    if (q >= 0.) {
+		x = (b = sqrt(q)) * sinlam;
+		y = coslam * ((params.mode == S_POLE) ? b : -b);
+	    } else {
+		x = y = 0.;
+	    }
+	}
+    }
+
+    p.x = params.a * x + params.x0;
+    p.y = params.a * y + params.y0;
+    return p;
+}				//lamazFwd()
+
 // backwards, i.e. x, y -> lon, lat
 vec2 laea_backwards(vec2 p, laea_params params)
 {
