@@ -1,3 +1,7 @@
 {
-    "float": ["x0", "y0", "a", "ns0", "long0", "rh", "c", "e3", "es"]
+    "int": ["sphere"],
+    "float": [
+        "x0", "y0", "a", "ns0", "long0", "rh", "c", "e3", "es",
+        "sin_phi", "cos_phi"
+    ]
 }

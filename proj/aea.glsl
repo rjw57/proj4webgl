@@ -28,8 +28,9 @@ float phi1z(float eccent, float qs)
 {
     float sinphi, cosphi, con, com, dphi;
     float phi = asinz(.5 * qs);
-    if (eccent < EPSLN)
+    if (eccent < EPSLN) {
 	return phi;
+    }
 
     float eccnts = eccent * eccent;
     for (int i = 1; i <= 25; i++) {
@@ -42,10 +43,32 @@ float phi1z(float eccent, float qs)
 				       .5 / eccent * log((1.0 - con) /
 							 (1.0 + con)));
 	phi = phi + dphi;
-	if (abs(dphi) <= 1e-7)
+	if (abs(dphi) <= 1e-5) {
 	    return phi;
+	}
     }
     return 0.;
+}
+
+/* Albers Conical Equal Area forward equations--mapping lat,long to x,y
+  -------------------------------------------------------------------*/
+vec2 aea_forwards(vec2 p, aea_params params)
+{
+    float lon = p.x;
+    float lat = p.y;
+
+    params.sin_phi = sin(lat);
+    params.cos_phi = cos(lat);
+
+    float qs = qsfnz(params.e3, params.sin_phi);	// originally in Proj4js but is useless -> , params.cos_phi);
+    float rh1 = params.a * sqrt(params.c - params.ns0 * qs) / params.ns0;
+    float theta = params.ns0 * adjust_lon(lon - params.long0);
+    float x = rh1 * sin(theta) + params.x0;
+    float y = params.rh - rh1 * cos(theta) + params.y0;
+
+    p.x = x;
+    p.y = y;
+    return p;
 }
 
 vec2 aea_backwards(vec2 p, aea_params params)
@@ -66,23 +89,10 @@ vec2 aea_backwards(vec2 p, aea_params params)
 	theta = atan(con * p.x, con * p.y);
     }
     con = rh1 * params.ns0 / params.a;
-    qs = (params.c - con * con) / params.ns0;
-    if (params.e3 >= 1e-10) {
-	con =
-	    1. - .5 * (1.0 -
-		      params.es) * log((1.0 - params.e3) / (1.0 +
-							    params.e3)) /
-	    params.e3;
-	if (abs(abs(con) - abs(qs)) > .0000000001) {
-	    lat = phi1z(params.e3, qs);
-	} else {
-	    if (qs >= 0.) {
-		lat = .5 * PI;
-	    } else {
-		lat = -.5 * PI;
-	    }
-	}
+    if (0 != params.sphere) {
+	lat = asin((params.c - con * con) / (2.0 * params.ns0));
     } else {
+	qs = (params.c - con * con) / params.ns0;
 	lat = phi1z(params.e3, qs);
     }
 
