@@ -30,9 +30,13 @@ define [
     mv.addLayer baseLayer
     
     boundaryLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json'
+    boundaryLayer.set 'lineWidth', 1
+    boundaryLayer.set 'lineColor', r: 1, g: 0, b: 0
     mv.addLayer boundaryLayer
 
     coastLayer = new VectorLayer mv, 'ne_110m_coastline.json'
+    coastLayer.set 'lineWidth', 2
+    coastLayer.set 'lineColor', r: 0, g: 0.5, b: 1
     mv.addLayer coastLayer
 
     projSelectChanged = (elem) ->

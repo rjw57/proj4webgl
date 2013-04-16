@@ -1,6 +1,8 @@
 (function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], function(xhr, Proj4Gl) {
+  define(['dojo/request/xhr', './script/proj4gl.js', 'dojo/Stateful', './script/webgl-utils.js'], function(xhr, Proj4Gl, Stateful) {
     var VectorLayer, createAndCompileShader;
     createAndCompileShader = function(gl, type, source) {
       var shader;
@@ -14,7 +16,9 @@
       }
       return shader;
     };
-    VectorLayer = (function() {
+    VectorLayer = (function(_super) {
+
+      __extends(VectorLayer, _super);
 
       function VectorLayer(map, featuresUrl) {
         var _this = this;
@@ -23,6 +27,12 @@
         this.gl = null;
         this.shaderProgram = null;
         this.featuresLoaded = false;
+        this.set('lineColor', {
+          r: 1,
+          g: 0,
+          b: 0
+        });
+        this.set('lineWidth', 1);
         this.map.watch('gl', function(n, o, gl) {
           return _this.setGl(gl);
         });
@@ -45,6 +55,16 @@
           return _this._featuresLoaded(data);
         });
         return this.setProjection(this.map.projection);
+      };
+
+      VectorLayer.prototype._lineColorSetter = function(lineColor) {
+        this.lineColor = lineColor;
+        return this.map.scheduleRedraw();
+      };
+
+      VectorLayer.prototype._lineWidthSetter = function(lineWidth) {
+        this.lineWidth = lineWidth;
+        return this.map.scheduleRedraw();
       };
 
       VectorLayer.prototype._featuresLoaded = function(data) {
@@ -100,7 +120,7 @@
         }
         projSource = Proj4Gl.projectionShaderSource(this.proj.projName);
         vertexShader = createAndCompileShader(this.gl, this.gl.VERTEX_SHADER, "attribute vec2 aVertexPosition;\n\n// define the projection and projection parameters structure\n" + projSource.source + "\n\nuniform vec2 uViewportSize; // in pixels\nuniform float uScale; // the size of one pixel in projection co-ords\nuniform vec2 uViewportProjectionCenter; // the center of the viewport in projection co-ords\nuniform " + projSource.paramsStruct.name + " uProjParams;\n\nvoid main(void) {\n  vec2 lnglat = aVertexPosition;\n  vec2 xy = " + projSource.forwardsFunction + "(lnglat, uProjParams);\n\n  // convert projection to viewport space\n  vec2 screen = 2.0 * vec2(xy + uViewportProjectionCenter) / (uScale * uViewportSize);\n\n  gl_Position = vec4(screen, 0.0, 1.0);\n}");
-        fragmentShader = createAndCompileShader(this.gl, this.gl.FRAGMENT_SHADER, "void main(void) {\n  gl_FragColor = vec4(1,0,0,1);\n}");
+        fragmentShader = createAndCompileShader(this.gl, this.gl.FRAGMENT_SHADER, "precision mediump float;\n\nuniform vec3 uLineColor;\nvoid main(void) {\n  gl_FragColor = vec4(uLineColor,1);\n}");
         this.shaderProgram = this.gl.createProgram();
         this.gl.attachShader(this.shaderProgram, vertexShader);
         this.gl.attachShader(this.shaderProgram, fragmentShader);
@@ -113,6 +133,7 @@
         };
         this.shaderProgram.uniforms = {
           viewportSize: this.gl.getUniformLocation(this.shaderProgram, 'uViewportSize'),
+          lineColor: this.gl.getUniformLocation(this.shaderProgram, 'uLineColor'),
           scale: this.gl.getUniformLocation(this.shaderProgram, 'uScale'),
           viewportProjectionCenter: this.gl.getUniformLocation(this.shaderProgram, 'uViewportProjectionCenter'),
           projParams: {}
@@ -125,7 +146,7 @@
             type: paramDef[1]
           };
           if (!this.shaderProgram.uniforms.projParams[paramDef[0]].loc) {
-            console.log('parameter ' + paramDec[0] + ' appears unused');
+            console.log('parameter ' + paramDef[0] + ' appears unused');
           }
         }
         this.gl.useProgram(this.shaderProgram);
@@ -146,6 +167,8 @@
         this.gl.vertexAttribPointer(this.shaderProgram.attributes.vertexPosition, this.vertexBuffer.positionSize, this.gl.FLOAT, false, this.vertexBuffer.stride, this.vertexBuffer.positionOffset);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
         this.gl.useProgram(this.shaderProgram);
+        this.gl.lineWidth(this.lineWidth);
+        this.gl.uniform3f(this.shaderProgram.uniforms.lineColor, this.lineColor.r, this.lineColor.g, this.lineColor.b);
         this.gl.uniform2f(this.shaderProgram.uniforms.viewportSize, this.map.element.clientWidth, this.map.element.clientHeight);
         this.gl.uniform1f(this.shaderProgram.uniforms.scale, this.map.scale);
         this.gl.uniform2f(this.shaderProgram.uniforms.viewportProjectionCenter, this.map.center.x, this.map.center.y);
@@ -168,7 +191,7 @@
 
       return VectorLayer;
 
-    })();
+    })(Stateful);
     return VectorLayer;
   });
 

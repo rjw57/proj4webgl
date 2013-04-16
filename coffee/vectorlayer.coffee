@@ -1,4 +1,8 @@
-define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (xhr, Proj4Gl) ->
+define [
+  'dojo/request/xhr', './script/proj4gl.js',
+  'dojo/Stateful',
+  './script/webgl-utils.js'
+], (xhr, Proj4Gl, Stateful) ->
   createAndCompileShader = (gl, type, source) ->
     shader = gl.createShader type
     gl.shaderSource shader, source
@@ -11,11 +15,14 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
 
     return shader
 
-  class VectorLayer
+  class VectorLayer extends Stateful
     constructor: (@map, @featuresUrl) ->
       @gl = null
       @shaderProgram = null
       @featuresLoaded = false
+
+      @set 'lineColor', {r: 1, g: 0, b: 0}
+      @set 'lineWidth', 1
 
       @map.watch 'gl', (n, o, gl) => @setGl(gl)
       @map.watch 'projection', (n, o, proj) => @setProjection(proj)
@@ -29,6 +36,12 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
       xhr(@featuresUrl, handleAs: 'json').then (data) => @_featuresLoaded(data)
 
       @setProjection @map.projection
+
+    _lineColorSetter: (@lineColor) ->
+      @map.scheduleRedraw()
+
+    _lineWidthSetter: (@lineWidth) ->
+      @map.scheduleRedraw()
 
     _featuresLoaded: (data) ->
       # the idea of this method is to convert the loaded features into a series of lines
@@ -114,8 +127,11 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
       """
 
       fragmentShader = createAndCompileShader @gl, @gl.FRAGMENT_SHADER, """
+        precision mediump float;
+
+        uniform vec3 uLineColor;
         void main(void) {
-          gl_FragColor = vec4(1,0,0,1);
+          gl_FragColor = vec4(uLineColor,1);
         }
       """
 
@@ -135,6 +151,7 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
 
       @shaderProgram.uniforms = {
         viewportSize: @gl.getUniformLocation(@shaderProgram, 'uViewportSize')
+        lineColor: @gl.getUniformLocation(@shaderProgram, 'uLineColor')
         scale: @gl.getUniformLocation(@shaderProgram, 'uScale')
         viewportProjectionCenter:
           @gl.getUniformLocation(@shaderProgram, 'uViewportProjectionCenter')
@@ -148,7 +165,7 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
           type: paramDef[1]
         }
         if not @shaderProgram.uniforms.projParams[paramDef[0]].loc
-          console.log 'parameter ' + paramDec[0] + ' appears unused'
+          console.log 'parameter ' + paramDef[0] + ' appears unused'
 
       # enable use of an attribute array for each of the attributes
       @gl.useProgram @shaderProgram
@@ -172,6 +189,9 @@ define ['dojo/request/xhr', './script/proj4gl.js', './script/webgl-utils.js'], (
 
       # set program uniform values
       @gl.useProgram @shaderProgram
+
+      @gl.lineWidth @lineWidth
+      @gl.uniform3f @shaderProgram.uniforms.lineColor, @lineColor.r, @lineColor.g, @lineColor.b
 
       @gl.uniform2f @shaderProgram.uniforms.viewportSize, @map.element.clientWidth, @map.element.clientHeight
       @gl.uniform1f @shaderProgram.uniforms.scale, @map.scale
