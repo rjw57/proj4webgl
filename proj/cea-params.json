@@ -1,3 +1,4 @@
 {
-    "float": ["a", "x0", "y0", "long0", "lat_ts"]
+    "int": ["sphere"],
+    "float": ["a", "x0", "y0", "long0", "lat_ts", "e", "k0"]
 }

@@ -38,7 +38,7 @@ As an experimental project, only a very small number of projections have been
 implemented.
 
 * ``aea`` (to lat/lng only, buggy)
-* ``cea`` (to lat/lng only)
+* ``cea`` (to/from lat/lng)
 * ``eqc`` (to/from lat/lng)
 * ``laea`` (to/from lat/lng)
 * ``lcc`` (to/from lat/lng)

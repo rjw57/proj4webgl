@@ -20,7 +20,7 @@ Note: This implementation assumes a Spherical Earth. The (commented) code
 has been included for the ellipsoidal forward transform, but derivation of 
 the ellispoidal inverse transform is beyond me. Note that most of the 
 Proj4JS implementations do NOT currently support ellipsoidal figures. 
-Therefore this is not seen as a problem - especially this lack of support 
+Therefore params.is not seen as a problem - especially params.lack of support 
 is explicitly stated here.
  
 ALGORITHM REFERENCES
@@ -33,6 +33,30 @@ ALGORITHM REFERENCES
     Projections", Univ. Chicago Press, 1993
 *******************************************************************************/
 
+/* Cylindrical Equal Area forward equations--mapping lat,long to x,y
+   ------------------------------------------------------------*/
+vec2 cea_forwards(vec2 p, cea_params params)
+{
+    float lon = p.x;
+    float lat = p.y;
+    float x, y;
+    /* Forward equations
+       ----------------- */
+    float dlon = adjust_lon(lon - params.long0);
+    if (0 != params.sphere) {
+	x = params.x0 + params.a * dlon * cos(params.lat_ts);
+	y = params.y0 + params.a * sin(lat) / cos(params.lat_ts);
+    } else {
+	float qs = qsfnz(params.e, sin(lat));
+	x = params.x0 + params.a * params.k0 * dlon;
+	y = params.y0 + params.a * qs * 0.5 / params.k0;
+    }
+
+    p.x = x;
+    p.y = y;
+    return p;
+}				//ceaFwd()
+
 /* Cylindrical Equal Area inverse equations--mapping x,y to lat/long
 ------------------------------------------------------------*/
 vec2 cea_backwards(vec2 p, cea_params params)
@@ -41,7 +65,7 @@ vec2 cea_backwards(vec2 p, cea_params params)
     p.y -= params.y0;
 
     float lon = adjust_lon(params.long0 +
-			 (p.x / params.a) / cos(params.lat_ts));
+			   (p.x / params.a) / cos(params.lat_ts));
 
     float lat = asin((p.y / params.a) * cos(params.lat_ts));
 
