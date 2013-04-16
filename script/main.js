@@ -2,8 +2,8 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', './script/mapviewer.js', './script/proj4js-combined.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, MapViewer) {
-    var Dragging, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
+  define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', './script/mapviewer.js', './script/rasterlayer.js', './script/proj4js-combined.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, MapViewer, RasterLayer) {
+    var Dragging, baseLayer, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc\
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137\
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
@@ -20,12 +20,14 @@
       mapCanvas.height = mapCanvas.clientHeight;
       return mv.scheduleRedraw();
     });
-    mv = new MapViewer(mapCanvas, 'world.jpg');
+    mv = new MapViewer(mapCanvas);
+    baseLayer = new RasterLayer(mv, 'world.jpg');
+    mv.addLayer(baseLayer);
     projSelectChanged = function(elem) {
       var opt;
       opt = elem.options[elem.selectedIndex];
       return new Proj4js.Proj(opt.value, function(proj) {
-        return mv.setProjection(proj);
+        return mv.set('projection', proj);
       });
     };
     _on(projSelect, 'change', function(ev) {
@@ -33,10 +35,10 @@
     });
     projSelectChanged(projSelect);
     _on(dom.byId('zoomIn'), 'click', function(ev) {
-      return mv.setScale(mv.scale / 1.1);
+      return mv.set('scale', mv.scale / 1.1);
     });
     _on(dom.byId('zoomOut'), 'click', function(ev) {
-      return mv.setScale(mv.scale * 1.1);
+      return mv.set('scale', mv.scale * 1.1);
     });
     Dragging = (function(_super) {
 
@@ -95,7 +97,7 @@
       return oldCenter = mv.center;
     });
     dragging.on('dragmove', function(ev) {
-      return mv.setCenter({
+      return mv.set('center', {
         x: oldCenter.x + ev.deltaX * mv.scale,
         y: oldCenter.y - ev.deltaY * mv.scale
       });
@@ -109,12 +111,12 @@
         x: x,
         y: y
       });
-      mv.setScale(scale);
+      mv.set('scale', scale);
       newZoomCenter = mv.elementToProjection({
         x: x,
         y: y
       });
-      return mv.setCenter({
+      return mv.set('center', {
         x: mv.center.x + newZoomCenter.x - zoomCenter.x,
         y: mv.center.y + newZoomCenter.y - zoomCenter.y
       });

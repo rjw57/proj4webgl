@@ -1,10 +1,10 @@
 # AMD definition for main
 define [
     'dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry',
-    './script/mapviewer.js',
+    './script/mapviewer.js', './script/rasterlayer.js',
     './script/proj4js-combined.js',
     'dojo/domReady',
-  ], (dom, _on, Evented, domGeom, MapViewer) ->
+  ], (dom, _on, Evented, domGeom, MapViewer, RasterLayer) ->
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
@@ -23,18 +23,21 @@ define [
       mapCanvas.height = mapCanvas.clientHeight
       mv.scheduleRedraw()
 
-    mv = new MapViewer mapCanvas, 'world.jpg'
+    mv = new MapViewer mapCanvas
+    
+    baseLayer = new RasterLayer mv, 'world.jpg'
+    mv.addLayer baseLayer
 
     projSelectChanged = (elem) ->
       opt = elem.options[elem.selectedIndex]
       new Proj4js.Proj opt.value, (proj) ->
-        mv.setProjection proj
+        mv.set 'projection', proj
 
     _on projSelect, 'change', (ev) -> projSelectChanged(ev.target)
     projSelectChanged projSelect
 
-    _on dom.byId('zoomIn'), 'click', (ev) -> mv.setScale mv.scale / 1.1
-    _on dom.byId('zoomOut'), 'click', (ev) -> mv.setScale mv.scale * 1.1
+    _on dom.byId('zoomIn'), 'click', (ev) -> mv.set 'scale', mv.scale / 1.1
+    _on dom.byId('zoomOut'), 'click', (ev) -> mv.set 'scale', mv.scale * 1.1
 
     # A class implementing a dragging behaviour
     class Dragging extends Evented
@@ -65,7 +68,7 @@ define [
     dragging = new Dragging mapCanvas
     dragging.on 'dragstart', (ev) -> oldCenter = mv.center
     dragging.on 'dragmove', (ev) ->
-      mv.setCenter x: oldCenter.x + ev.deltaX * mv.scale, y: oldCenter.y - ev.deltaY * mv.scale
+      mv.set 'center', x: oldCenter.x + ev.deltaX * mv.scale, y: oldCenter.y - ev.deltaY * mv.scale
 
     scaleAround = (ev, scale) ->
       # where is the event in the element
@@ -76,13 +79,13 @@ define [
       # and in projection co-ordinates
       zoomCenter = mv.elementToProjection x: x, y: y
 
-      mv.setScale scale
+      mv.set 'scale', scale
 
       # now where is the zoom center?
       newZoomCenter = mv.elementToProjection x: x, y: y
 
-      # translate the map to move the zoom centre back where it was
-      mv.setCenter x: mv.center.x + newZoomCenter.x - zoomCenter.x, y: mv.center.y + newZoomCenter.y - zoomCenter.y
+      # translate the map to move the zoom center back where it was
+      mv.set 'center', x: mv.center.x + newZoomCenter.x - zoomCenter.x, y: mv.center.y + newZoomCenter.y - zoomCenter.y
 
     _on mapCanvas, 'mousewheel', (ev) ->
       if ev.wheelDelta < 0
