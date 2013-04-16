@@ -16,10 +16,11 @@ define [
     return shader
 
   class VectorLayer extends Stateful
-    constructor: (@map, @featuresUrl) ->
+    constructor: (@map, @featuresUrl, @description) ->
       @gl = null
       @shaderProgram = null
       @featuresLoaded = false
+      @visible = true
 
       @set 'lineColor', {r: 1, g: 0, b: 0}
       @set 'lineWidth', 1
@@ -41,6 +42,9 @@ define [
       @map.scheduleRedraw()
 
     _lineWidthSetter: (@lineWidth) ->
+      @map.scheduleRedraw()
+
+    _visibleSetter: (@visible)->
       @map.scheduleRedraw()
 
     _featuresLoaded: (data) ->
@@ -176,7 +180,7 @@ define [
 
     # actually draw the scene
     drawLayer: () ->
-      return if not @shaderProgram? or not @featuresLoaded or not @vertexBuffer?
+      return if not @visible or not @shaderProgram? or not @featuresLoaded or not @vertexBuffer?
 
       # set up the vertex buffer
       @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer

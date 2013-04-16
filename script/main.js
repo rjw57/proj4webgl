@@ -2,8 +2,8 @@
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', './script/mapviewer.js', './script/rasterlayer.js', './script/vectorlayer.js', './script/proj4js-compressed.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, MapViewer, RasterLayer, VectorLayer) {
-    var Dragging, baseLayer, boundaryLayer, coastLayer, dragging, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround;
+  define(['dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry', 'dojo/dom-construct', 'dojo/dom-attr', './script/mapviewer.js', './script/rasterlayer.js', './script/vectorlayer.js', './script/proj4js-compressed.js', 'dojo/domReady'], function(dom, _on, Evented, domGeom, domConstruct, domAttr, MapViewer, RasterLayer, VectorLayer) {
+    var Dragging, baseLayer, boundaryLayer, coastLayer, dragging, id, idx, input, label, layer, layerToggles, li, mapCanvas, mv, oldCenter, projDef, projSelect, projSelectChanged, scaleAround, _i, _len, _ref;
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc\
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137\
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
@@ -21,9 +21,9 @@
       return mv.scheduleRedraw();
     });
     mv = new MapViewer(mapCanvas);
-    baseLayer = new RasterLayer(mv, 'world.jpg');
+    baseLayer = new RasterLayer(mv, 'world.jpg', 'Topography and bathymetry');
     mv.addLayer(baseLayer);
-    boundaryLayer = new VectorLayer(mv, 'ne_110m_admin_0_boundary_lines_land.json');
+    boundaryLayer = new VectorLayer(mv, 'ne_110m_admin_0_boundary_lines_land.json', 'Boundaries');
     boundaryLayer.set('lineWidth', 1);
     boundaryLayer.set('lineColor', {
       r: 1,
@@ -31,7 +31,7 @@
       b: 0
     });
     mv.addLayer(boundaryLayer);
-    coastLayer = new VectorLayer(mv, 'ne_110m_coastline.json');
+    coastLayer = new VectorLayer(mv, 'ne_110m_coastline.json', 'Coastline');
     coastLayer.set('lineWidth', 2);
     coastLayer.set('lineColor', {
       r: 0,
@@ -39,6 +39,31 @@
       b: 1
     });
     mv.addLayer(coastLayer);
+    layerToggles = dom.byId('layerToggles');
+    idx = 1;
+    _ref = mv.layers;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      layer = _ref[_i];
+      id = 'layerToggle' + idx.toString();
+      li = domConstruct.create('li', null, layerToggles, 'last');
+      input = domConstruct.create('input', {
+        type: 'checkbox',
+        id: id
+      }, li, 'last');
+      if (layer.visible) {
+        domAttr.set(input, 'checked', 1);
+      }
+      _on(input, 'change', (function(layer) {
+        return function(ev) {
+          return layer.set('visible', domAttr.get(ev.target, 'checked'));
+        };
+      })(layer));
+      label = domConstruct.create('label', {
+        "for": id
+      }, li, 'last');
+      domConstruct.place(document.createTextNode(layer.description), label, 'last');
+      idx++;
+    }
     projSelectChanged = function(elem) {
       var opt;
       opt = elem.options[elem.selectedIndex];

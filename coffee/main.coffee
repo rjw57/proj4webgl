@@ -1,11 +1,16 @@
 # AMD definition for main
 define [
     'dojo/dom', 'dojo/on', 'dojo/Evented', 'dojo/dom-geometry',
+    'dojo/dom-construct', 'dojo/dom-attr',
     './script/mapviewer.js', './script/rasterlayer.js',
     './script/vectorlayer.js',
     './script/proj4js-compressed.js',
     'dojo/domReady',
-  ], (dom, _on, Evented, domGeom, MapViewer, RasterLayer, VectorLayer) ->
+  ], (
+    dom, _on, Evented, domGeom,
+    domConstruct, domAttr,
+    MapViewer, RasterLayer, VectorLayer
+  ) ->
     Proj4js.defs['SR-ORG:6864'] = '+proj=merc
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
@@ -26,18 +31,38 @@ define [
 
     mv = new MapViewer mapCanvas
     
-    baseLayer = new RasterLayer mv, 'world.jpg'
+    baseLayer = new RasterLayer mv, 'world.jpg', 'Topography and bathymetry'
     mv.addLayer baseLayer
     
-    boundaryLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json'
+    boundaryLayer = new VectorLayer mv, 'ne_110m_admin_0_boundary_lines_land.json', 'Boundaries'
     boundaryLayer.set 'lineWidth', 1
     boundaryLayer.set 'lineColor', r: 1, g: 0, b: 0
     mv.addLayer boundaryLayer
 
-    coastLayer = new VectorLayer mv, 'ne_110m_coastline.json'
+    coastLayer = new VectorLayer mv, 'ne_110m_coastline.json', 'Coastline'
     coastLayer.set 'lineWidth', 2
     coastLayer.set 'lineColor', r: 0, g: 0.5, b: 1
     mv.addLayer coastLayer
+
+    # setup layer toggles
+    layerToggles = dom.byId('layerToggles')
+    idx = 1
+    for layer in mv.layers
+      id = 'layerToggle' + idx.toString()
+      li = domConstruct.create 'li', null, layerToggles, 'last'
+
+      # checkbox
+      input = domConstruct.create 'input', { type: 'checkbox', id: id }, li, 'last'
+      if layer.visible
+        domAttr.set input, 'checked', 1
+      _on input, 'change', ((layer) -> (ev) ->
+        layer.set 'visible', domAttr.get(ev.target, 'checked')
+      )(layer)
+
+      # label for checkbox
+      label = domConstruct.create 'label', { for: id }, li, 'last'
+      domConstruct.place document.createTextNode(layer.description), label, 'last'
+      idx++
 
     projSelectChanged = (elem) ->
       opt = elem.options[elem.selectedIndex]

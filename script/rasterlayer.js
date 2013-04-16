@@ -1,6 +1,8 @@
 (function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  define(['./script/proj4gl.js', './script/webgl-utils.js'], function(Proj4Gl) {
+  define(['./script/proj4gl.js', 'dojo/Stateful', './script/webgl-utils.js'], function(Proj4Gl, Stateful) {
     var RasterLayer, createAndCompileShader;
     createAndCompileShader = function(gl, type, source) {
       var shader;
@@ -14,15 +16,19 @@
       }
       return shader;
     };
-    RasterLayer = (function() {
+    RasterLayer = (function(_super) {
 
-      function RasterLayer(map, textureUrl) {
+      __extends(RasterLayer, _super);
+
+      function RasterLayer(map, textureUrl, description) {
         var _this = this;
         this.map = map;
         this.textureUrl = textureUrl;
+        this.description = description;
         this.gl = null;
         this.shaderProgram = null;
         this.texture = null;
+        this.visible = true;
         this.map.watch('gl', function(n, o, gl) {
           return _this.setGl(gl);
         });
@@ -31,6 +37,11 @@
         });
         this.setGl(this.map.gl);
       }
+
+      RasterLayer.prototype._visibleSetter = function(visible) {
+        this.visible = visible;
+        return this.map.scheduleRedraw();
+      };
 
       RasterLayer.prototype.setGl = function(gl) {
         var _this = this;
@@ -108,7 +119,7 @@
 
       RasterLayer.prototype.drawLayer = function() {
         var k, v, _ref;
-        if (!(this.shaderProgram != null) || !this.texture.loaded) {
+        if (!this.visible || !(this.shaderProgram != null) || !this.texture.loaded) {
           return;
         }
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -154,7 +165,7 @@
 
       return RasterLayer;
 
-    })();
+    })(Stateful);
     return RasterLayer;
   });
 

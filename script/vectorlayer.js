@@ -20,13 +20,15 @@
 
       __extends(VectorLayer, _super);
 
-      function VectorLayer(map, featuresUrl) {
+      function VectorLayer(map, featuresUrl, description) {
         var _this = this;
         this.map = map;
         this.featuresUrl = featuresUrl;
+        this.description = description;
         this.gl = null;
         this.shaderProgram = null;
         this.featuresLoaded = false;
+        this.visible = true;
         this.set('lineColor', {
           r: 1,
           g: 0,
@@ -64,6 +66,11 @@
 
       VectorLayer.prototype._lineWidthSetter = function(lineWidth) {
         this.lineWidth = lineWidth;
+        return this.map.scheduleRedraw();
+      };
+
+      VectorLayer.prototype._visibleSetter = function(visible) {
+        this.visible = visible;
         return this.map.scheduleRedraw();
       };
 
@@ -160,7 +167,7 @@
 
       VectorLayer.prototype.drawLayer = function() {
         var k, v, _ref;
-        if (!(this.shaderProgram != null) || !this.featuresLoaded || !(this.vertexBuffer != null)) {
+        if (!this.visible || !(this.shaderProgram != null) || !this.featuresLoaded || !(this.vertexBuffer != null)) {
           return;
         }
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);

@@ -14,21 +14,36 @@ body, html {
   z-index: -1000;
 }
 
-#note {
+.boxed {
   font-size: 12px;
-  position: absolute;
   padding: 5px 15px;
-  width: 25em;
-  right: 10px;
-  top: 10px;
   background-color: rgba(0,0,0,0.75);
   color: #eee;
   border-radius: 5px;
 }
 
-#note a {
+.boxed a {
   color: #bbb;
   text-decoration: underline;
+}
+
+#controls {
+  position: absolute;
+  width: 30em;
+  left: 10px;
+  top: 10px;
+}
+
+ul#layerToggles {
+  padding: 0;
+  list-style-type: none;
+}
+
+#note {
+  position: absolute;
+  width: 25em;
+  right: 10px;
+  top: 10px;
 }
 
 /* vim:sw=2:sts=2:et

@@ -1,4 +1,8 @@
-define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
+define [
+  './script/proj4gl.js',
+  'dojo/Stateful',
+  './script/webgl-utils.js'
+], (Proj4Gl, Stateful) ->
   createAndCompileShader = (gl, type, source) ->
     shader = gl.createShader type
     gl.shaderSource shader, source
@@ -11,15 +15,19 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
 
     return shader
 
-  class RasterLayer
-    constructor: (@map, @textureUrl) ->
+  class RasterLayer extends Stateful
+    constructor: (@map, @textureUrl, @description) ->
       @gl = null
       @shaderProgram = null
       @texture = null
+      @visible = true
 
       @map.watch 'gl', (n, o, gl) => @setGl(gl)
       @map.watch 'projection', (n, o, proj) => @setProjection(proj)
       @setGl @map.gl # calls setProjection
+
+    _visibleSetter: (@visible)->
+      @map.scheduleRedraw()
 
     setGl: (@gl) ->
       return if not @gl?
@@ -144,7 +152,7 @@ define ['./script/proj4gl.js', './script/webgl-utils.js'], (Proj4Gl) ->
 
     # actually draw the scene
     drawLayer: () ->
-      return if not @shaderProgram? or not @texture.loaded
+      return if not @visible or not @shaderProgram? or not @texture.loaded
 
       # set up the vertex buffer
       @gl.bindBuffer @gl.ARRAY_BUFFER, @vertexBuffer

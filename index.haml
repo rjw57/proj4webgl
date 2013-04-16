@@ -9,25 +9,27 @@
       require(['./script/main.js']);
     %link{ :rel => 'stylesheet', :href => 'style.css' }
   %body
-    %div#controls
-      %label{ :for => 'projection' }
-      %select#projection
-        %option{ :value => 'SR-ORG:6864', :selected => 1 } Spherical Mercator
-        %option{ :value => 'EPSG:32662' } Plate Carr&eacute;e
-        %option{ :value => 'EPSG:27700' } British National Grid
-        %option{ :value => 'EPSG:2163' } US National Atlas Equal Area
-        %option{ :value => 'EPSG:2192' } France EuroLambert
-        %option{ :value => 'EPSG:3410' } NSIDC EASE-Grid Global
-        %option{ :value => 'EPSG:3408' } NSIDC EASE-Grid North
-        %option{ :value => 'EPSG:3409' } NSIDC EASE-Grid South
-        %option{ :value => 'EPSG:3411' } NSIDC Sea Ice Polar Stereographic North
-        %option{ :value => 'EPSG:3412' } NSIDC Sea Ice Polar Stereographic South
-        %option{ :value => 'EPSG:3112' } Geoscience Australia Lambert
-        %option{ :value => 'EPSG:3577' } Australian Albers
-      %button#zoomIn +
-      %button#zoomOut -
+    %div#controls.boxed
+      %p#navigation
+        %label{ :for => 'projection' }
+        %select#projection
+          %option{ :value => 'SR-ORG:6864', :selected => 1 } Spherical Mercator
+          %option{ :value => 'EPSG:32662' } Plate Carr&eacute;e
+          %option{ :value => 'EPSG:27700' } British National Grid
+          %option{ :value => 'EPSG:2163' } US National Atlas Equal Area
+          %option{ :value => 'EPSG:2192' } France EuroLambert
+          %option{ :value => 'EPSG:3410' } NSIDC EASE-Grid Global
+          %option{ :value => 'EPSG:3408' } NSIDC EASE-Grid North
+          %option{ :value => 'EPSG:3409' } NSIDC EASE-Grid South
+          %option{ :value => 'EPSG:3411' } NSIDC Sea Ice Polar Stereographic North
+          %option{ :value => 'EPSG:3412' } NSIDC Sea Ice Polar Stereographic South
+          %option{ :value => 'EPSG:3112' } Geoscience Australia Lambert
+          %option{ :value => 'EPSG:3577' } Australian Albers
+        %button#zoomIn +
+        %button#zoomOut -
+      %ul#layerToggles
     %canvas#mapCanvas
-    %div#note
+    %div#note.boxed
       %p
         Please wait for imagery to load.  Drag map to move, use the mouse wheel
         or +/- buttons to zoom in/out. Choose the projection from the drop-down
