@@ -15,6 +15,10 @@ define [
       +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137
       +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
 
+    Proj4js.defs["SR-ORG:22"] = "+proj=cea
+      +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84
+      +units=m +no_defs"
+
     projDef = 'EPSG:27700'
     projDef = 'EPSG:3031'
     projDef = 'EPSG:2163'
